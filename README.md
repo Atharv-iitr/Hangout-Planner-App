@@ -1,3 +1,3 @@
 # Hangout-Planner-App
-this is a hangout planner app
+this is a hangout planner ap
 
