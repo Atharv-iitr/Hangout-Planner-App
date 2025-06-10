@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hangout_planner/Pages/Invites.dart';
-import 'package:hangout_planner/Pages/friends.dart';
-import 'package:hangout_planner/Pages/Notification.dart';
+import 'invites.dart';
+import 'friends.dart';
+import 'notification.dart';
 /// Flutter code sample for [Drawer].
 
 void main() => runApp(const HomePage());
@@ -15,11 +15,11 @@ class HomePage extends StatelessWidget {
     return MaterialApp(
       home: const DrawerExample(),
       debugShowCheckedModeBanner: false,
-      routes: {
+      routes: <String, WidgetBuilder>{
         
-        '/invitespage': (context) => const InvitesPage(),
-        '/friendspage': (context) => const FriendsPage(),
-        '/Notificationpage': (context) => const NotificationsPage()
+        '/invitespage': (BuildContext context) => const InvitesPage(),
+        '/friendspage': (BuildContext context) => const FriendsPage(),
+        '/Notificationpage': (BuildContext context) => const NotificationsPage()
       },
     );
   }
