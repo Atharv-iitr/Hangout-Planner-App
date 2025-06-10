@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'invites.dart';
-import 'friends.dart';
-import 'notification.dart';
+import 'package:hangout_planner/Pages/invites.dart';
+import 'package:hangout_planner/Pages/friends.dart';
+import 'package:hangout_planner/Pages/Notification.dart';
 /// Flutter code sample for [Drawer].
 
 void main() => runApp(const HomePage());
@@ -15,11 +15,11 @@ class HomePage extends StatelessWidget {
     return MaterialApp(
       home: const DrawerExample(),
       debugShowCheckedModeBanner: false,
-      routes: <String, WidgetBuilder>{
+      routes: {
         
-        '/invitespage': (BuildContext context) => const InvitesPage(),
-        '/friendspage': (BuildContext context) => const FriendsPage(),
-        '/Notificationpage': (BuildContext context) => const NotificationsPage()
+        '/invitespage': (context) => const InvitesPage(),
+        '/friendspage': (context) => const FriendsPage(),
+        '/Notificationpage': (context) => const NotificationsPage()
       },
     );
   }
@@ -46,6 +46,16 @@ class _DrawerExampleState extends State<DrawerExample> {
         ),
         
         ),
+        actions: [
+          IconButton(
+            onPressed: (){
+              
+            },
+            icon: const Icon(Icons.account_circle_outlined),
+            iconSize: 32,
+            padding: const EdgeInsets.fromLTRB(0, 6, 8, 0),
+          ),
+        ],
         centerTitle: true,
       ),
       drawer: Drawer(
@@ -83,6 +93,17 @@ class _DrawerExampleState extends State<DrawerExample> {
       ),
       body: Center(child: Text('Page: $selectedPage')),
       
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Action when pressed
+        },
+        icon: const Icon(Icons.edit),
+        label: const Text("Make Plan"),
+      ),
+      
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Bottom-right
     );
+      
+    
   }
 }
