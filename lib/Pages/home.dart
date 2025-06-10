@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/invites.dart';
 import 'package:hangout_planner/Pages/friends.dart';
 import 'package:hangout_planner/Pages/Notification.dart';
+import 'package:hangout_planner/Pages/make_plan.dart';
 /// Flutter code sample for [Drawer].
 
 void main() => runApp(const HomePage());
@@ -13,26 +14,27 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const DrawerExample(),
+      home: const Home(),
       debugShowCheckedModeBanner: false,
       routes: {
         
         '/invitespage': (context) => const InvitesPage(),
         '/friendspage': (context) => const FriendsPage(),
-        '/Notificationpage': (context) => const NotificationsPage()
+        '/Notificationpage': (context) => const NotificationsPage(),
+        '/makeplan': (context) => const MakePlan(),
       },
     );
   }
 }
 
-class DrawerExample extends StatefulWidget {
-  const DrawerExample({super.key});
+class Home extends StatefulWidget {
+  const Home({super.key});
 
   @override
-  State<DrawerExample> createState() => _DrawerExampleState();
+  State<Home> createState() => _HomeState();
 }
 
-class _DrawerExampleState extends State<DrawerExample> {
+class _HomeState extends State<Home> {
   String selectedPage = '';
 
   @override
@@ -95,7 +97,7 @@ class _DrawerExampleState extends State<DrawerExample> {
       
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Action when pressed
+          Navigator.pushNamed(context,'/makeplan');
         },
         icon: const Icon(Icons.edit),
         label: const Text("Make Plan"),
