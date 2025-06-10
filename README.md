@@ -1,2 +1,3 @@
 # Hangout-Planner-App
-Mention the changes here 
+this is a hangout planner app
+
