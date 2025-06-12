@@ -6,10 +6,10 @@ class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
 
   @override
-  _RegisterFormState createState() => _RegisterFormState();
+  RegisterFormState createState() => RegisterFormState();
 }
 
-class _RegisterFormState extends State<RegisterForm> {
+class RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -33,7 +33,9 @@ class _RegisterFormState extends State<RegisterForm> {
         _passwordController.text.trim(),
         _nameController.text.trim(),
       );
-
+      if (!mounted) {
+        return;
+      }
       if (user != null) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {

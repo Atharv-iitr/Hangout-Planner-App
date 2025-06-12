@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -28,8 +29,8 @@ class HomePage extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await AuthService().signOut();
+                  onPressed: ()  {
+                    AuthService().signOut();
                     Navigator.pushReplacementNamed(context, '/login');
                   },
                 ),
@@ -82,7 +83,7 @@ class HomePage extends StatelessWidget {
               leading: const Icon(Icons.account_circle),
               title: const Text('Friends'),
               onTap: () {
-                Navigator.pushNamed(context, '/friendspage');
+                Navigator.pushReplacementNamed(context, '/friendspage');
               },
             ),
             ListTile(

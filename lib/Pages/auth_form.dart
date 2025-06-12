@@ -7,10 +7,10 @@ class AuthForm extends StatefulWidget {
   const AuthForm({super.key, required this.isLogin});
 
   @override
-  _AuthFormState createState() => _AuthFormState();
+  AuthFormState createState() => AuthFormState();
 }
 
-class _AuthFormState extends State<AuthForm> {
+class AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -27,12 +27,15 @@ class _AuthFormState extends State<AuthForm> {
         _usernameController.text.trim(),
         _passwordController.text.trim(),
       );
-
+      if (!mounted) {
+        return;
+      }
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Invalid username or password'),
           ),
+          
         );
       } else {
         Navigator.pushReplacementNamed(context, '/home');
