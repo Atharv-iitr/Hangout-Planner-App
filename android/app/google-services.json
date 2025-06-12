@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696019532044",
+    "project_id": "hango-app-1060d",
+    "storage_bucket": "hango-app-1060d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696019532044:android:4ef2c938ee406a9b953129",
+        "android_client_info": {
+          "package_name": "com.example.hangout_planner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqWe4d934bwKAdzyPjlKH1dPcieQ06yOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
