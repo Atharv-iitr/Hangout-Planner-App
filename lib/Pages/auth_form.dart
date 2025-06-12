@@ -12,7 +12,7 @@ class AuthForm extends StatefulWidget {
 
 class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -23,15 +23,15 @@ class _AuthFormState extends State<AuthForm> {
 
     try {
       final authService = AuthService();
-      User? user = await authService.signInWithEmail(
-        _emailController.text.trim(),
+      User? user = await authService.signInWithUsername(
+        _usernameController.text.trim(),
         _passwordController.text.trim(),
       );
 
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Invalid credentials or not registered'),
+            content: Text('Invalid username or password'),
           ),
         );
       } else {
@@ -44,7 +44,7 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -63,18 +63,20 @@ class _AuthFormState extends State<AuthForm> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
-                controller: _emailController,
+                controller: _usernameController,
                 decoration: const InputDecoration(
-                  labelText: 'Email',
+                  labelText: 'Username',
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return 'Please enter your username';
                   }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
+                  if (value.contains(' ')) {
+                    return 'Username cannot contain spaces';
+                  }
+                  if (value.length < 4) {
+                    return 'Username must be at least 4 characters';
                   }
                   return null;
                 },
