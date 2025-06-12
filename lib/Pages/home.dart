@@ -49,13 +49,17 @@ class HomePage extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 String userName = 'User';
+                String userUsername = '';
+
                 if (snapshot.hasData && snapshot.data!.exists) {
                   userName = snapshot.data!['name'] ?? 'User';
+                  // Get the raw username without email domain
+                  userUsername = snapshot.data!['username'] ?? '';
                 }
                 
                 return UserAccountsDrawerHeader(
                   accountName: Text(userName),
-                  accountEmail: Text(user?.email ?? 'No email'),
+                  accountEmail: Text(userUsername.isNotEmpty ? '@$userUsername' : ''),
                   currentAccountPicture: user?.photoURL != null
                       ? CircleAvatar(
                           backgroundImage: NetworkImage(user!.photoURL!),
