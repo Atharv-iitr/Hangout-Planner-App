@@ -7,7 +7,7 @@ class NotificationsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications',
+        title: const Text('notifications',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 20,
