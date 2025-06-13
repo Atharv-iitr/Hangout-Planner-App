@@ -1,7 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class SearchPage extends StatelessWidget {
+class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
+
+  @override
+  State<SearchPage> createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<DocumentSnapshot> _results = [];
+
+  void _searchUsers(String query) async {
+    final meId = FirebaseAuth.instance.currentUser!.uid;
+    final querySnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('username', isEqualTo: query)
+        .get();
+
+    setState(() {
+      _results = querySnap.docs.where((doc) => doc.id != meId).toList();
+    });
+  }
+
+  Future<bool> _isFriendOrRequested(doc) async {
+    final me = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    final data = me.data()!;
+
+    final friends = (data['friends'] as List)
+        .map((e) => e['uid'] as String)
+        .toList();
+    final outgoing = List<String>.from(data['outgoingRequests'] ?? []);
+    return friends.contains(doc.id) || outgoing.contains(doc.id);
+  }
+
+ void _sendRequest(DocumentSnapshot target) async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You must be signed in')),
+    );
+    return;
+  }
+
+  final meId = user.uid;
+  final targetId = target.id;
+
+  final meRef = FirebaseFirestore.instance.collection('users').doc(meId);
+  final targetRef = FirebaseFirestore.instance.collection('users').doc(targetId);
+
+  try {
+    await Future.wait([
+      meRef.set({
+        'outgoingRequests': FieldValue.arrayUnion([targetId])
+      }, SetOptions(merge: true)),
+      targetRef.set({
+        'incomingRequests': FieldValue.arrayUnion([meId])
+      }, SetOptions(merge: true)),
+    ]);
+
+    if (!mounted) return; // ✅ check before using context
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Friend request sent')),
+    );
+  } catch (e, stack) {
+    debugPrint('🔥 ERROR sending request: $e');
+    debugPrint('📌 Stacktrace: $stack');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.toString()}')),
+    );
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -9,15 +88,48 @@ class SearchPage extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search or type here...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search usernames...',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                      prefixIcon: const Icon(Icons.search),
+                    ),
+                  ),
                 ),
-                prefixIcon: const Icon(Icons.search),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () => _searchUsers(_searchController.text),
+                )
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _results.length,
+              itemBuilder: (context, i) {
+                final doc = _results[i];
+                return FutureBuilder<bool>(
+                  future: _isFriendOrRequested(doc),
+                  builder: (context, snap) {
+                    final busy = snap.data ?? false;
+                    return ListTile(
+                      title: Text(doc['username']),
+                      trailing: busy
+                          ? const Text('Already requested or friends')
+                          : ElevatedButton(
+                              onPressed: () => _sendRequest(doc),
+                              child: const Text('Add Friend'),
+                            ),
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
