@@ -126,9 +126,9 @@ class HomePage extends StatelessWidget {
             child: FloatingActionButton(
               heroTag: "fab1",
               onPressed: () {
-                Navigator.pushNamed(context, '/friendspage');
+                Navigator.pushNamed(context, '/search');
               },
-              child: const Icon(Icons.group),
+              child: const Icon(Icons.search),
             ),
           ),
           Positioned(

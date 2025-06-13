@@ -7,6 +7,7 @@ import 'package:hangout_planner/Pages/invites.dart';
 import 'package:hangout_planner/Pages/login_page.dart';
 import 'package:hangout_planner/Pages/make_plan.dart';
 import 'package:hangout_planner/Pages/notification.dart';
+import 'package:hangout_planner/Pages/search.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         '/Notificationpage': (context) => const NotificationsPage(),
         '/makeplan': (context) => const MakePlan(),
         '/login': (context) => const LoginPage(),
+        '/search': (context) => const SearchPage(),
         
       },
     );
