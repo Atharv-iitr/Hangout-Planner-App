@@ -3,22 +3,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Hangout Planner',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
         actions: [
@@ -29,7 +25,7 @@ class HomePage extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.logout),
-                  onPressed: ()  {
+                  onPressed: () {
                     AuthService().signOut();
                     Navigator.pushReplacementNamed(context, '/login');
                   },
@@ -57,17 +53,17 @@ class HomePage extends StatelessWidget {
                   // Get the raw username without email domain
                   userUsername = snapshot.data!['username'] ?? '';
                 }
-                
+
                 return UserAccountsDrawerHeader(
                   accountName: Text(userName),
-                  accountEmail: Text(userUsername.isNotEmpty ? '@$userUsername' : ''),
+                  accountEmail: Text(
+                    userUsername.isNotEmpty ? '@$userUsername' : '',
+                  ),
                   currentAccountPicture: user?.photoURL != null
                       ? CircleAvatar(
                           backgroundImage: NetworkImage(user!.photoURL!),
                         )
-                      : const CircleAvatar(
-                          child: Icon(Icons.person),
-                        ),
+                      : const CircleAvatar(child: Icon(Icons.person)),
                   decoration: const BoxDecoration(color: Colors.blue),
                 );
               },
@@ -83,7 +79,7 @@ class HomePage extends StatelessWidget {
               leading: const Icon(Icons.account_circle),
               title: const Text('Friends'),
               onTap: () {
-                Navigator.pushReplacementNamed(context, '/friendspage');
+                Navigator.pushNamed(context, '/friendspage');
               },
             ),
             ListTile(
@@ -107,7 +103,7 @@ class HomePage extends StatelessWidget {
             if (snapshot.hasData && snapshot.data!.exists) {
               userName = snapshot.data!['name'] ?? 'User';
             }
-            
+
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -121,15 +117,35 @@ class HomePage extends StatelessWidget {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context,'/makeplan');
-        },
-        icon: const Icon(Icons.edit),
-        label: const Text("Make Plan"),
+      floatingActionButton: Stack(
+        children: <Widget>[
+          // Bottom-left FAB
+          Positioned(
+            bottom: 16,
+            left: 16,
+            child: FloatingActionButton(
+              heroTag: "fab1",
+              onPressed: () {
+                Navigator.pushNamed(context, '/friendspage');
+              },
+              child: const Icon(Icons.group),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.extended(
+              heroTag: "fab2",
+              onPressed: () {
+                Navigator.pushNamed(context, '/makeplan');
+              },
+              icon: const Icon(Icons.edit),
+              label: const Text("Make Plan"),
+            ),
+          ),
+        ],
       ),
-      
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Bottom-right
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
