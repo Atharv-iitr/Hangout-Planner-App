@@ -71,8 +71,8 @@ class _SearchPageState extends State<SearchPage> {
       const SnackBar(content: Text('Friend request sent')),
     );
   } catch (e, stack) {
-    debugPrint('🔥 ERROR sending request: $e');
-    debugPrint('📌 Stacktrace: $stack');
+    debugPrint('ERROR sending request: $e');
+    debugPrint('Stacktrace: $stack');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: ${e.toString()}')),
