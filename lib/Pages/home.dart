@@ -121,6 +121,15 @@ class HomePage extends StatelessWidget {
           },
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.pushNamed(context,'/makeplan');
+        },
+        icon: const Icon(Icons.edit),
+        label: const Text("Make Plan"),
+      ),
+      
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Bottom-right
     );
   }
 }

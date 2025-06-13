@@ -5,7 +5,6 @@ import 'package:hangout_planner/Pages/friends.dart';
 import 'package:hangout_planner/Pages/home.dart';
 import 'package:hangout_planner/Pages/invites.dart';
 import 'package:hangout_planner/Pages/login_page.dart';
-import 'package:hangout_planner/Pages/login_page.dart';
 import 'package:hangout_planner/Pages/make_plan.dart';
 import 'package:hangout_planner/Pages/notification.dart';
 
@@ -40,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/Notificationpage': (context) => const NotificationsPage(),
         '/makeplan': (context) => const MakePlan(),
         '/login': (context) => const LoginPage(),
+        
       },
     );
   }
