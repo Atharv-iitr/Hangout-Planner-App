@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// akhil
+
 class AuthForm extends StatefulWidget {
   final bool isLogin;
   const AuthForm({super.key, required this.isLogin});
@@ -27,19 +27,23 @@ class AuthFormState extends State<AuthForm> {
         _usernameController.text.trim(),
         _passwordController.text.trim(),
       );
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Invalid username or password'),
+            content: Text('Wrong username or password'),
           ),
-          
         );
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Wrong username or password'),
+        ),
+      );
     } finally {
       setState(() => _isLoading = false);
     }

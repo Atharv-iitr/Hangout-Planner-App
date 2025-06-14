@@ -17,7 +17,7 @@ class AuthService {
       return snapshot.docs.isNotEmpty;
     } catch (e) {
       debugPrint('Username check error: $e');
-      return true; // Fail safe - assume username exists
+      return true; // Fail safe
     }
   }
 
@@ -28,7 +28,6 @@ class AuthService {
     String name,
   ) async {
     try {
-      // Validate username availability
       if (await _usernameExists(username)) {
         throw FirebaseAuthException(
           code: 'username-taken',
@@ -36,90 +35,88 @@ class AuthService {
         );
       }
 
-      // Create a unique email for Firebase Auth
       final domain = _auth.app.options.projectId;
       final uniqueEmail = '${username.toLowerCase()}@$domain.com';
 
-      // 1. Create auth user
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: uniqueEmail,
         password: password,
       );
 
-      // 2. Create user document in Firestore
       await _firestore.collection('users').doc(userCredential.user?.uid).set({
         'uid': userCredential.user?.uid,
         'username': username.toLowerCase(),
-        'email': uniqueEmail, // Stored for reference
+        'email': uniqueEmail,
         'name': name,
         'createdAt': FieldValue.serverTimestamp(),
-        'isApproved': true, // Set to false if you need admin approval
+        'isApproved': true,
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
-      debugPrint('Firebase Auth Error: ${e.code} - ${e.message}');
-      rethrow; // Let the UI handle specific auth errors
+      debugPrint('Auth error [${e.code}]: ${e.message}');
+      rethrow;
     } catch (e) {
-      debugPrint('Registration Error: $e');
+      debugPrint('Registration error: $e');
       throw FirebaseAuthException(
-        code: 'registration-error',
-        message: 'Registration failed. Please try again.',
+        code: 'registration-failed',
+        message: 'Something went wrong. Please try again.',
       );
     }
   }
 
-  // Sign in with username
+  // Sign in using username and password
   Future<User?> signInWithUsername(String username, String password) async {
     try {
-      // 1. Look up the email associated with this username
-      final userSnapshot = await _firestore
+      final snapshot = await _firestore
           .collection('users')
           .where('username', isEqualTo: username.toLowerCase())
           .limit(1)
           .get();
 
-      if (userSnapshot.docs.isEmpty) {
+      if (snapshot.docs.isEmpty) {
         throw FirebaseAuthException(
           code: 'user-not-found',
-          message: 'No account found with this username',
+          message: 'No user found with that username.',
         );
       }
 
-      final userData = userSnapshot.docs.first.data();
+      final userData = snapshot.docs.first.data();
       final email = userData['email'] as String?;
 
       if (email == null) {
         throw FirebaseAuthException(
-          code: 'invalid-account',
-          message: 'Account data is corrupted',
+          code: 'invalid-data',
+          message: 'Invalid account information.',
         );
       }
 
-      // 2. Sign in with email/password
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // 3. Update last login time
       await _firestore
           .collection('users')
-          .doc(userCredential.user?.uid)
-          .update({
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
+          .doc(credential.user?.uid)
+          .update({'lastLogin': FieldValue.serverTimestamp()});
 
-      return userCredential.user;
+      return credential.user;
     } on FirebaseAuthException catch (e) {
-      debugPrint('Login Error: ${e.code} - ${e.message}');
+      debugPrint('Login error [${e.code}]: ${e.message}');
+      if (e.code == 'wrong-password' || e.code == 'user-not-found' || e.code == 'invalid-email') {
+        throw FirebaseAuthException(
+          code: e.code,
+          message: 'Wrong username or password',
+        );
+      }
       rethrow;
     } catch (e) {
       debugPrint('Unexpected login error: $e');
       throw FirebaseAuthException(
-        code: 'login-failed',
-        message: 'Login failed. Please try again.',
+        code: 'login-error',
+        message: 'An error occurred during login.',
       );
     }
   }
@@ -143,18 +140,14 @@ class AuthService {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       return doc.data();
     } catch (e) {
-      debugPrint('Error getting user data: $e');
+      debugPrint('Fetch user data error: $e');
       return null;
     }
   }
 
-  // Check if user is logged in
-  bool isLoggedIn() {
-    return _auth.currentUser != null;
-  }
+  // Get current FirebaseAuth user
+  User? getCurrentUser() => _auth.currentUser;
 
-  // Get current auth user
-  User? getCurrentUser() {
-    return _auth.currentUser;
-  }
+  // Is a user currently logged in
+  bool isLoggedIn() => _auth.currentUser != null;
 }
