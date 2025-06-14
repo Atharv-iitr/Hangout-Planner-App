@@ -1,102 +1,164 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:graphview/GraphView.dart';
 
-class FirstDeg extends StatelessWidget {
-  const FirstDeg({super.key});
+class FirstDeg extends StatefulWidget {
+  final String? userUid; // <-- Add this
 
-  Widget node(String label) {
-    return Container(
-      width: 60,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.blue[100],
-        border: Border.all(color: Colors.black),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(label, textAlign: TextAlign.center),
-    );
+  const FirstDeg({super.key, this.userUid}); // <-- Add this
+
+  @override
+  State<FirstDeg> createState() => _FirstDegState();
+}
+
+class _FirstDegState extends State<FirstDeg> {
+  final Graph graph = Graph();
+  late Node centerNode;
+
+  bool isLoading = true;
+  List<Map<String, String>> friends = [];
+  String centerName = 'You';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFriends();
+  }
+
+  Future<void> _loadFriends() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final uid = widget.userUid ?? user.uid;
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      final username = userDoc.data()?['username'] ?? 'You';
+      centerName = username;
+      centerNode = Node.Id(centerName);
+
+      final friendsList = (userDoc.data()?['friends'] as List?) ?? [];
+
+      List<Map<String, String>> fetchedFriends = [];
+
+      for (final friend in friendsList) {
+        final friendUid = friend['uid'];
+        final friendDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(friendUid)
+            .get();
+
+        final friendName = friendDoc.data()?['username'] ?? 'Unknown';
+        fetchedFriends.add({'uid': friendUid, 'username': friendName});
+      }
+
+      setState(() {
+        friends = fetchedFriends;
+        isLoading = false;
+        _buildGraph();
+      });
+    } catch (e) {
+      debugPrint("Error loading friends: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _buildGraph() {
+    graph.nodes.clear();
+    graph.edges.clear();
+    graph.addNode(centerNode);
+    for (final friend in friends) {
+      final node = Node.Id(friend['username']);
+      graph.addEdge(centerNode, node);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your 1st degree friends')),
-      body: Center(
-        child: SizedBox(
-          width: 400,
-          height: 400,
-          child: Stack(
-            children: [
-              // Arrows layer
-              CustomPaint(
-                size: const Size(400, 400),
-                painter: ArrowPainter(),
-              ),
+      appBar: AppBar(title: Text("$centerName's Friends")),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : friends.isEmpty
+              ? const Center(child: Text("No friends found"))
+              : InteractiveViewer(
+                  constrained: false,
+                  boundaryMargin: const EdgeInsets.all(100),
+                  minScale: 0.01,
+                  maxScale: 5.6,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: FruchtermanReingoldAlgorithm(),
+                    builder: (Node node) {
+                      final name = node.key!.value as String;
+                      return personNode(name);
+                    },
+                  ),
+                ),
+    );
+  }
 
-              // Nodes
-              Positioned(top: 50, left: 170, child: node("Top")),
-              Positioned(top: 310, left: 170, child: node("Bottom")),
+  Widget personNode(String name) {
+    if (name == centerName) {
+      // Center node (You or friend)
+      return Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.blueAccent,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade400,
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          name,
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
 
-              Positioned(top: 90, left: 10, child: node("L1")),
-              Positioned(top: 170, left: 10, child: node("L2")),
-              Positioned(top: 250, left: 10, child: node("L3")),
+    // Find the friend's UID
+    final friend = friends.firstWhere((f) => f['username'] == name, orElse: () => {});
+    final friendUid = friend['uid'];
 
-              Positioned(top: 90, right: 10, child: node("R1")),
-              Positioned(top: 170, right: 10, child: node("R2")),
-              Positioned(top: 250, right: 10, child: node("R3")),
-
-              Positioned(top: 170, left: 170, child: node("Center")),
-            ],
-          ),
+    return GestureDetector(
+      onTap: () {
+        if (friendUid != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FirstDeg(userUid: friendUid),
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.orange[200],
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade400,
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          name,
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
   }
-}
-
-// Custom painter to draw lines with arrowheads
-class ArrowPainter extends CustomPainter {
-  final center = const Offset(200, 190); // Center node center position
-
-  void drawArrow(Canvas canvas, Offset from, Offset to) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 2;
-
-    // Draw line
-    canvas.drawLine(from, to, paint);
-
-    // Draw arrowhead
-    const arrowSize = 8.0;
-    final angle = atan2(to.dy - from.dy, to.dx - from.dx);
-    final path = Path()
-      ..moveTo(to.dx, to.dy)
-      ..lineTo(to.dx - arrowSize * cos(angle - pi / 6),
-                to.dy - arrowSize * sin(angle - pi / 6))
-      ..lineTo(to.dx - arrowSize * cos(angle + pi / 6),
-                to.dy - arrowSize * sin(angle + pi / 6))
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Define node positions (approximate centers of their containers)
-    final top = const Offset(200, 70);
-    final bottom = const Offset(200, 330);
-    final l1 = const Offset(40, 110);
-    final l2 = const Offset(40, 190);
-    final l3 = const Offset(40, 270);
-    final r1 = const Offset(360, 110);
-    final r2 = const Offset(360, 190);
-    final r3 = const Offset(360, 270);
-
-    for (final from in [top, bottom, l1, l2, l3, r1, r2, r3]) {
-      drawArrow(canvas, from, center);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
