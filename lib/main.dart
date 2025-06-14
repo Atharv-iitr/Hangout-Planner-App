@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hangout_planner/Pages/first_deg.dart';
 import 'package:hangout_planner/Pages/friends.dart';
 import 'package:hangout_planner/Pages/home.dart';
 import 'package:hangout_planner/Pages/invites.dart';
@@ -38,10 +39,10 @@ class MyApp extends StatelessWidget {
         '/invitespage': (context) => const InvitesPage(),
         '/friendspage': (context) => const FriendsPage(),
         '/Notificationpage': (context) => const NotificationsPage(),
-        '/makeplan': (context) => const MakePlan(),
+        '/makeplan': (context) => MakePlan(),
         '/login': (context) => const LoginPage(),
         '/search': (context) => const SearchPage(),
-        
+        '/firstdeg': (context) => const FirstDeg(),
       },
     );
   }
