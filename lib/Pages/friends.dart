@@ -12,12 +12,31 @@ class FriendsPage extends StatefulWidget {
 
 class _FriendsPageState extends State<FriendsPage> {
   List<Map<String, String>> _friends = [];
+  List<Map<String, String>> _filteredFriends = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadFriends();
+    _searchController.addListener(_filterFriends);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterFriends() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredFriends = _friends
+          .where((friend) =>
+              friend['username']!.toLowerCase().contains(query))
+          .toList();
+    });
   }
 
   Future<void> _loadFriends() async {
@@ -50,6 +69,7 @@ class _FriendsPageState extends State<FriendsPage> {
 
       setState(() {
         _friends = friends;
+        _filteredFriends = friends;
         _isLoading = false;
       });
     } catch (e) {
@@ -67,8 +87,10 @@ class _FriendsPageState extends State<FriendsPage> {
     if (user == null) return;
 
     try {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final friendRef = FirebaseFirestore.instance.collection('users').doc(friendUid);
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final friendRef =
+          FirebaseFirestore.instance.collection('users').doc(friendUid);
 
       // Remove friend from current user's list
       final userDoc = await userRef.get();
@@ -128,24 +150,53 @@ class _FriendsPageState extends State<FriendsPage> {
       appBar: AppBar(title: const Text("Your Friends")),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _friends.isEmpty
-              ? const Center(child: Text("You have no friends."))
-              : ListView.builder(
-                  itemCount: _friends.length,
-                  itemBuilder: (context, index) {
-                    final friend = _friends[index];
-                    return ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(friend['username'] ?? 'Unknown'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.remove_circle, color: Colors.red),
-                        tooltip: "Remove friend",
-                        onPressed: () =>
-                            _confirmAndRemove(friend['uid']!, friend['username']!),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: 'Search friends...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                  },
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _filterFriends();
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
                 ),
+                Expanded(
+                  child: _filteredFriends.isEmpty
+                      ? const Center(child: Text("No matching friends found."))
+                      : ListView.builder(
+                          itemCount: _filteredFriends.length,
+                          itemBuilder: (context, index) {
+                            final friend = _filteredFriends[index];
+                            return ListTile(
+                              leading: const Icon(Icons.person),
+                              title: Text(friend['username'] ?? 'Unknown'),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.remove_circle,
+                                    color: Colors.red),
+                                tooltip: "Remove friend",
+                                onPressed: () => _confirmAndRemove(
+                                    friend['uid']!, friend['username']!),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
