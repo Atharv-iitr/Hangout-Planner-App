@@ -33,9 +33,9 @@ class RegisterFormState extends State<RegisterForm> {
         _passwordController.text.trim(),
         _nameController.text.trim(),
       );
-      if (!mounted) {
-        return;
-      }
+
+      if (!mounted) return;
+
       if (user != null) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
@@ -70,9 +70,7 @@ class RegisterFormState extends State<RegisterForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      appBar: AppBar(title: const Text('Register')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -86,7 +84,8 @@ class RegisterFormState extends State<RegisterForm> {
                     labelText: 'Full Name',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) => value?.isEmpty ?? true ? 'Please enter your name' : null,
+                  validator: (value) =>
+                      (value == null || value.isEmpty) ? 'Please enter your name' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -101,7 +100,7 @@ class RegisterFormState extends State<RegisterForm> {
                     if (value.contains(' ')) return 'No spaces allowed';
                     if (value.length < 4) return 'At least 4 characters';
                     if (!RegExp(r'^[a-z0-9_]+$').hasMatch(value.toLowerCase())) {
-                      return 'Only letters, numbers and _';
+                      return 'Only letters, numbers and _ allowed';
                     }
                     return null;
                   },
@@ -114,11 +113,11 @@ class RegisterFormState extends State<RegisterForm> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
-                  validator: (value) => value?.isEmpty ?? true 
-                      ? 'Please enter password' 
-                      : value!.length < 6 
-                          ? 'At least 6 characters' 
-                          : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter password';
+                    if (value.length < 6) return 'At least 6 characters';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -128,15 +127,15 @@ class RegisterFormState extends State<RegisterForm> {
                     border: OutlineInputBorder(),
                   ),
                   obscureText: true,
-                  validator: (value) => value != _passwordController.text 
-                      ? 'Passwords don\'t match' 
-                      : null,
+                  validator: (value) =>
+                      value != _passwordController.text ? 'Passwords don\'t match' : null,
                 ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 16),
                   Text(
                     _errorMessage!,
-                    style: TextStyle(
+                    style: const TextStyle(
+                      color: Colors.red,
                       fontSize: 16,
                     ),
                   ),
