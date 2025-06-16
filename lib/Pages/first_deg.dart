@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:graphview/GraphView.dart';
+import 'dart:math';
 
 class FirstDeg extends StatefulWidget {
-  final String? userUid; // <-- Add this
+  final String? userUid;
+  final int depth;
 
-  const FirstDeg({super.key, this.userUid}); // <-- Add this
+  const FirstDeg({super.key, this.userUid, this.depth = 0});
 
   @override
   State<FirstDeg> createState() => _FirstDegState();
 }
 
 class _FirstDegState extends State<FirstDeg> {
-  final Graph graph = Graph();
-  late Node centerNode;
-
   bool isLoading = true;
   List<Map<String, String>> friends = [];
   String centerName = 'You';
@@ -40,7 +38,6 @@ class _FirstDegState extends State<FirstDeg> {
 
       final username = userDoc.data()?['username'] ?? 'You';
       centerName = username;
-      centerNode = Node.Id(centerName);
 
       final friendsList = (userDoc.data()?['friends'] as List?) ?? [];
 
@@ -60,21 +57,10 @@ class _FirstDegState extends State<FirstDeg> {
       setState(() {
         friends = fetchedFriends;
         isLoading = false;
-        _buildGraph();
       });
     } catch (e) {
       debugPrint("Error loading friends: $e");
       setState(() => isLoading = false);
-    }
-  }
-
-  void _buildGraph() {
-    graph.nodes.clear();
-    graph.edges.clear();
-    graph.addNode(centerNode);
-    for (final friend in friends) {
-      final node = Node.Id(friend['username']);
-      graph.addEdge(centerNode, node);
     }
   }
 
@@ -86,79 +72,146 @@ class _FirstDegState extends State<FirstDeg> {
           ? const Center(child: CircularProgressIndicator())
           : friends.isEmpty
               ? const Center(child: Text("No friends found"))
-              : InteractiveViewer(
-                  constrained: false,
-                  boundaryMargin: const EdgeInsets.all(100),
-                  minScale: 0.01,
-                  maxScale: 5.6,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: FruchtermanReingoldAlgorithm(),
-                    builder: (Node node) {
-                      final name = node.key!.value as String;
-                      return personNode(name);
-                    },
-                  ),
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final center = Offset(
+                      constraints.maxWidth / 2,
+                      constraints.maxHeight / 2,
+                    );
+                    const double nodeRadius = 40;
+                    const double orbitRadius = 120;
+
+                    List<Offset> friendPositions = [];
+                    for (int i = 0; i < friends.length; i++) {
+                      final angle = 2 * pi * i / friends.length;
+                      final dx = center.dx + orbitRadius * cos(angle);
+                      final dy = center.dy + orbitRadius * sin(angle);
+                      friendPositions.add(Offset(dx, dy));
+                    }
+
+                    return Stack(
+                      children: [
+                        // Draw lines
+                        CustomPaint(
+                          size: Size.infinite,
+                          painter: LinePainter(
+                            center: center,
+                            friendPositions: friendPositions,
+                          ),
+                        ),
+                        // Center node
+                        Positioned(
+                          left: center.dx - nodeRadius,
+                          top: center.dy - nodeRadius,
+                          width: nodeRadius * 2,
+                          height: nodeRadius * 2,
+                          child: _buildNode(centerName, color: Colors.blueAccent),
+                        ),
+                        // Friend nodes
+                        for (int i = 0; i < friends.length; i++)
+                          Positioned(
+                            left: friendPositions[i].dx - nodeRadius,
+                            top: friendPositions[i].dy - nodeRadius,
+                            width: nodeRadius * 2,
+                            height: nodeRadius * 2,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (widget.depth < 1) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FirstDeg(
+                                        userUid: friends[i]['uid'],
+                                        depth: widget.depth + 1,
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  // Optional: show a snackbar when limit reached
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "You can only view up to second-degree friends.",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: _buildNode(
+                                friends[i]['username'] ?? 'Unknown',
+                                color: widget.depth < 1
+                                    ? Colors.orangeAccent
+                                    : Colors.grey, // Visually indicate disabled
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
     );
   }
 
-  Widget personNode(String name) {
-    if (name == centerName) {
-      // Center node (You or friend)
-      return Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.blueAccent,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade400,
-              blurRadius: 4,
-              offset: const Offset(2, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          name,
-          style: const TextStyle(color: Colors.white),
-        ),
-      );
-    }
-
-    // Find the friend's UID
-    final friend = friends.firstWhere((f) => f['username'] == name, orElse: () => {});
-    final friendUid = friend['uid'];
-
-    return GestureDetector(
-      onTap: () {
-        if (friendUid != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FirstDeg(userUid: friendUid),
-            ),
-          );
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.orange[200],
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade400,
-              blurRadius: 4,
-              offset: const Offset(2, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          name,
-          style: const TextStyle(color: Colors.white),
+  Widget _buildNode(String name, {required Color color}) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+            offset: Offset(2, 2),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: FittedBox(
+          child: Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
         ),
       ),
     );
+  }
+}
+
+class LinePainter extends CustomPainter {
+  final Offset center;
+  final List<Offset> friendPositions;
+
+  LinePainter({
+    required this.center,
+    required this.friendPositions,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double nodeRadius = 40;
+    final Paint linePaint = Paint()
+      ..color = Colors.grey
+      ..strokeWidth = 2;
+
+    for (final friendPos in friendPositions) {
+      final direction = (friendPos - center).normalize();
+      final start = center + direction * nodeRadius;
+      final end = friendPos - direction * nodeRadius;
+      canvas.drawLine(start, end, linePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Extension for vector normalization
+extension Normalize on Offset {
+  Offset normalize() {
+    final len = distance;
+    return len == 0 ? this : this / len;
   }
 }

@@ -34,6 +34,7 @@ class _SearchPageState extends State<SearchPage> {
         .where('username', isLessThanOrEqualTo: '$query\uf8ff')
         .get();
 
+    if (!mounted) return; 
     setState(() {
       _results = querySnap.docs.where((doc) => doc.id != meId).toList();
     });
