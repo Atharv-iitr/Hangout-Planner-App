@@ -6,7 +6,7 @@ import 'dart:math';
 class FirstDeg extends StatefulWidget {
   final String? userUid;
   final int depth;
-  final String? centerName; // <-- Added
+  final String? centerName;
 
   const FirstDeg({super.key, this.userUid, this.depth = 0, this.centerName});
 
@@ -17,12 +17,14 @@ class FirstDeg extends StatefulWidget {
 class _FirstDegState extends State<FirstDeg> {
   bool isLoading = true;
   List<Map<String, String>> friends = [];
-  late String centerName; // <-- Changed from default 'You'
+  late String centerName;
+  int currentPage = 0;
+  static const int friendsPerPage = 8;
 
   @override
   void initState() {
     super.initState();
-    centerName = widget.centerName ?? 'You'; // <-- Use passed name if exists
+    centerName = widget.centerName ?? 'You';
     _loadFriends();
   }
 
@@ -39,8 +41,7 @@ class _FirstDegState extends State<FirstDeg> {
           .get();
 
       final username = userDoc.data()?['username'] ?? 'You';
-      centerName =
-          widget.centerName ?? username; // Use provided or fetched name
+      centerName = widget.centerName ?? username;
 
       final friendsList = (userDoc.data()?['friends'] as List?) ?? [];
 
@@ -69,87 +70,141 @@ class _FirstDegState extends State<FirstDeg> {
 
   @override
   Widget build(BuildContext context) {
+    final totalPages = (friends.length / friendsPerPage).ceil();
+    final startIndex = currentPage * friendsPerPage;
+    final endIndex = min(startIndex + friendsPerPage, friends.length);
+    final visibleFriends = friends.sublist(startIndex, endIndex);
+
     return Scaffold(
       appBar: AppBar(title: Text("$centerName's Friends")),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : friends.isEmpty
-          ? const Center(child: Text("No friends found"))
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final center = Offset(
-                  constraints.maxWidth / 2,
-                  constraints.maxHeight / 2 - 100,
-                );
-                const double nodeRadius = 40;
-                const double orbitRadius = 120;
-
-                List<Offset> friendPositions = [];
-                for (int i = 0; i < friends.length; i++) {
-                  final angle = 2 * pi * i / friends.length;
-                  final dx = center.dx + orbitRadius * cos(angle);
-                  final dy = center.dy + orbitRadius * sin(angle);
-                  friendPositions.add(Offset(dx, dy));
-                }
-
-                return Stack(
+              ? const Center(child: Text("No friends found"))
+              : Column(
                   children: [
-                    CustomPaint(
-                      size: Size.infinite,
-                      painter: LinePainter(
-                        center: center,
-                        friendPositions: friendPositions,
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final center = Offset(
+                            constraints.maxWidth / 2,
+                            constraints.maxHeight / 2 - 100,
+                          );
+                          const double nodeRadius = 40;
+                          const double orbitRadius = 120;
+
+                          List<Offset> friendPositions = [];
+                          for (int i = 0; i < visibleFriends.length; i++) {
+                            final angle = 2 * pi * i / visibleFriends.length;
+                            final dx = center.dx + orbitRadius * cos(angle);
+                            final dy = center.dy + orbitRadius * sin(angle);
+                            friendPositions.add(Offset(dx, dy));
+                          }
+
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 600),
+                            transitionBuilder:
+                                (Widget child, Animation<double> animation) {
+                              return RotationTransition(
+                                turns: animation,
+                                child: FadeTransition(
+                                    opacity: animation, child: child),
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: ValueKey(currentPage),
+                              child: Stack(
+                                children: [
+                                  CustomPaint(
+                                    size: Size.infinite,
+                                    painter: LinePainter(
+                                      center: center,
+                                      friendPositions: friendPositions,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: center.dx - nodeRadius,
+                                    top: center.dy - nodeRadius,
+                                    width: nodeRadius * 2,
+                                    height: nodeRadius * 2,
+                                    child: _buildNode(centerName,
+                                        color: Colors.blueAccent),
+                                  ),
+                                  for (int i = 0;
+                                      i < visibleFriends.length;
+                                      i++)
+                                    Positioned(
+                                      left:
+                                          friendPositions[i].dx - nodeRadius,
+                                      top: friendPositions[i].dy - nodeRadius,
+                                      width: nodeRadius * 2,
+                                      height: nodeRadius * 2,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (widget.depth < 1) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => FirstDeg(
+                                                  userUid:
+                                                      visibleFriends[i]['uid'],
+                                                  centerName:
+                                                      visibleFriends[i]
+                                                          ['username'],
+                                                  depth:
+                                                      widget.depth + 1,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "You can only view up to second-degree friends.",
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: _buildNode(
+                                          visibleFriends[i]['username'] ??
+                                              'Unknown',
+                                          color: widget.depth < 1
+                                              ? Colors.orangeAccent
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    Positioned(
-                      left: center.dx - nodeRadius,
-                      top: center.dy - nodeRadius,
-                      width: nodeRadius * 2,
-                      height: nodeRadius * 2,
-                      child: _buildNode(centerName, color: Colors.blueAccent),
-                    ),
-                    for (int i = 0; i < friends.length; i++)
-                      Positioned(
-                        left: friendPositions[i].dx - nodeRadius,
-                        top: friendPositions[i].dy - nodeRadius,
-                        width: nodeRadius * 2,
-                        height: nodeRadius * 2,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (widget.depth < 1) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FirstDeg(
-                                    userUid: friends[i]['uid'],
-                                    centerName:
-                                        friends[i]['username'], // <-- Pass name
-                                    depth: widget.depth + 1,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "You can only view up to second-degree friends.",
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: _buildNode(
-                            friends[i]['username'] ?? 'Unknown',
-                            color: widget.depth < 1
-                                ? Colors.orangeAccent
-                                : Colors.grey,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: currentPage > 0
+                                ? () => setState(() => currentPage--)
+                                : null,
+                            child: const Text("Previous Friends"),
                           ),
-                        ),
+                          ElevatedButton(
+                            onPressed: currentPage < totalPages - 1
+                                ? () => setState(() => currentPage++)
+                                : null,
+                            child: const Text("Next Friends"),
+                          ),
+                        ],
                       ),
+                    ),
                   ],
-                );
-              },
-            ),
+                ),
     );
   }
 
