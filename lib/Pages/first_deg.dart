@@ -17,6 +17,7 @@ class FirstDeg extends StatefulWidget {
 class _FirstDegState extends State<FirstDeg> {
   bool isLoading = true;
   List<Map<String, String>> friends = [];
+  static Set<String> myPrimaryFriendUids = {}; // Set only once at root
   late String centerName;
   int currentPage = 0;
   static const int friendsPerPage = 8;
@@ -58,6 +59,11 @@ class _FirstDegState extends State<FirstDeg> {
         fetchedFriends.add({'uid': friendUid, 'username': friendName});
       }
 
+      // Only set myPrimaryFriendUids once (when depth == 0)
+      if (widget.depth == 0 && myPrimaryFriendUids.isEmpty) {
+        myPrimaryFriendUids = fetchedFriends.map((f) => f['uid']!).toSet();
+      }
+
       setState(() {
         friends = fetchedFriends;
         isLoading = false;
@@ -83,15 +89,26 @@ class _FirstDegState extends State<FirstDeg> {
               ? const Center(child: Text("No friends found"))
               : Column(
                   children: [
+                    const SizedBox(height: 40), // Shifts graph down
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final center = Offset(
                             constraints.maxWidth / 2,
-                            constraints.maxHeight / 2 - 100,
+                            constraints.maxHeight / 2 - 40, // Moves graph down
                           );
                           const double nodeRadius = 40;
                           const double orbitRadius = 120;
+
+                          final List<Offset> friendPositions = List.generate(
+                            visibleFriends.length,
+                            (i) {
+                              final angle = 2 * pi * i / visibleFriends.length;
+                              final dx = center.dx + orbitRadius * cos(angle);
+                              final dy = center.dy + orbitRadius * sin(angle);
+                              return Offset(dx, dy);
+                            },
+                          );
 
                           return AnimatedSwitcher(
                             duration: const Duration(milliseconds: 400),
@@ -109,15 +126,7 @@ class _FirstDegState extends State<FirstDeg> {
                                   size: Size.infinite,
                                   painter: LinePainter(
                                     center: center,
-                                    friendPositions: List.generate(
-                                      visibleFriends.length,
-                                      (i) {
-                                        final angle = 2 * pi * i / visibleFriends.length;
-                                        final dx = center.dx + orbitRadius * cos(angle);
-                                        final dy = center.dy + orbitRadius * sin(angle);
-                                        return Offset(dx, dy);
-                                      },
-                                    ),
+                                    friendPositions: friendPositions,
                                   ),
                                 ),
                                 Positioned(
@@ -129,36 +138,11 @@ class _FirstDegState extends State<FirstDeg> {
                                 ),
                                 for (int i = 0; i < visibleFriends.length; i++)
                                   Positioned(
-                                    left: center.dx + orbitRadius * cos(2 * pi * i / visibleFriends.length) - nodeRadius,
-                                    top: center.dy + orbitRadius * sin(2 * pi * i / visibleFriends.length) - nodeRadius,
+                                    left: friendPositions[i].dx - nodeRadius,
+                                    top: friendPositions[i].dy - nodeRadius,
                                     width: nodeRadius * 2,
                                     height: nodeRadius * 2,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        if (widget.depth < 1) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => FirstDeg(
-                                                userUid: visibleFriends[i]['uid'],
-                                                centerName: visibleFriends[i]['username'],
-                                                depth: widget.depth + 1,
-                                              ),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text("You can only view up to second-degree friends."),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: _buildNode(
-                                        visibleFriends[i]['username'] ?? 'Unknown',
-                                        color: widget.depth < 1 ? Colors.orangeAccent : Colors.grey,
-                                      ),
-                                    ),
+                                    child: _buildFriendNode(visibleFriends[i]),
                                   ),
                               ],
                             ),
@@ -188,6 +172,38 @@ class _FirstDegState extends State<FirstDeg> {
                     ),
                   ],
                 ),
+    );
+  }
+
+  Widget _buildFriendNode(Map<String, String> friend) {
+    final friendUid = friend['uid']!;
+    final isPrimaryFriend = myPrimaryFriendUids.contains(friendUid);
+
+    Color nodeColor = isPrimaryFriend ? Colors.green : Colors.grey;
+    bool isClickable = isPrimaryFriend;
+
+    return GestureDetector(
+      onTap: () {
+        if (isClickable) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FirstDeg(
+                userUid: friend['uid'],
+                centerName: friend['username'],
+                depth: widget.depth + 1,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only your friends are clickable."),
+            ),
+          );
+        }
+      },
+      child: _buildNode(friend['username'] ?? 'Unknown', color: nodeColor),
     );
   }
 
