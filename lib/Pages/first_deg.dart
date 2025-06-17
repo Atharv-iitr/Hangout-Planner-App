@@ -93,98 +93,81 @@ class _FirstDegState extends State<FirstDeg> {
                           const double nodeRadius = 40;
                           const double orbitRadius = 120;
 
-                          List<Offset> friendPositions = [];
-                          for (int i = 0; i < visibleFriends.length; i++) {
-                            final angle = 2 * pi * i / visibleFriends.length;
-                            final dx = center.dx + orbitRadius * cos(angle);
-                            final dy = center.dy + orbitRadius * sin(angle);
-                            friendPositions.add(Offset(dx, dy));
-                          }
-
                           return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 600),
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return RotationTransition(
-                                turns: animation,
-                                child: FadeTransition(
-                                    opacity: animation, child: child),
-                              );
+                            duration: const Duration(milliseconds: 400),
+                            transitionBuilder: (child, animation) {
+                              final offsetAnimation = Tween<Offset>(
+                                begin: const Offset(1, 0),
+                                end: Offset.zero,
+                              ).animate(animation);
+                              return SlideTransition(position: offsetAnimation, child: child);
                             },
-                            child: KeyedSubtree(
+                            child: Stack(
                               key: ValueKey(currentPage),
-                              child: Stack(
-                                children: [
-                                  CustomPaint(
-                                    size: Size.infinite,
-                                    painter: LinePainter(
-                                      center: center,
-                                      friendPositions: friendPositions,
+                              children: [
+                                CustomPaint(
+                                  size: Size.infinite,
+                                  painter: LinePainter(
+                                    center: center,
+                                    friendPositions: List.generate(
+                                      visibleFriends.length,
+                                      (i) {
+                                        final angle = 2 * pi * i / visibleFriends.length;
+                                        final dx = center.dx + orbitRadius * cos(angle);
+                                        final dy = center.dy + orbitRadius * sin(angle);
+                                        return Offset(dx, dy);
+                                      },
                                     ),
                                   ),
+                                ),
+                                Positioned(
+                                  left: center.dx - nodeRadius,
+                                  top: center.dy - nodeRadius,
+                                  width: nodeRadius * 2,
+                                  height: nodeRadius * 2,
+                                  child: _buildNode(centerName, color: Colors.blueAccent),
+                                ),
+                                for (int i = 0; i < visibleFriends.length; i++)
                                   Positioned(
-                                    left: center.dx - nodeRadius,
-                                    top: center.dy - nodeRadius,
+                                    left: center.dx + orbitRadius * cos(2 * pi * i / visibleFriends.length) - nodeRadius,
+                                    top: center.dy + orbitRadius * sin(2 * pi * i / visibleFriends.length) - nodeRadius,
                                     width: nodeRadius * 2,
                                     height: nodeRadius * 2,
-                                    child: _buildNode(centerName,
-                                        color: Colors.blueAccent),
-                                  ),
-                                  for (int i = 0;
-                                      i < visibleFriends.length;
-                                      i++)
-                                    Positioned(
-                                      left:
-                                          friendPositions[i].dx - nodeRadius,
-                                      top: friendPositions[i].dy - nodeRadius,
-                                      width: nodeRadius * 2,
-                                      height: nodeRadius * 2,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          if (widget.depth < 1) {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => FirstDeg(
-                                                  userUid:
-                                                      visibleFriends[i]['uid'],
-                                                  centerName:
-                                                      visibleFriends[i]
-                                                          ['username'],
-                                                  depth:
-                                                      widget.depth + 1,
-                                                ),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        if (widget.depth < 1) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => FirstDeg(
+                                                userUid: visibleFriends[i]['uid'],
+                                                centerName: visibleFriends[i]['username'],
+                                                depth: widget.depth + 1,
                                               ),
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "You can only view up to second-degree friends.",
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        child: _buildNode(
-                                          visibleFriends[i]['username'] ??
-                                              'Unknown',
-                                          color: widget.depth < 1
-                                              ? Colors.orangeAccent
-                                              : Colors.grey,
-                                        ),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text("You can only view up to second-degree friends."),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: _buildNode(
+                                        visibleFriends[i]['username'] ?? 'Unknown',
+                                        color: widget.depth < 1 ? Colors.orangeAccent : Colors.grey,
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           );
                         },
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 20.0),
+                      padding: const EdgeInsets.only(bottom: 40.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
