@@ -50,9 +50,13 @@ class HomePage extends StatelessWidget {
 
                 return UserAccountsDrawerHeader(
                   accountName: Text(userName),
-                  accountEmail: Text(userUsername.isNotEmpty ? '@$userUsername' : ''),
+                  accountEmail: Text(
+                    userUsername.isNotEmpty ? '@$userUsername' : '',
+                  ),
                   currentAccountPicture: user?.photoURL != null
-                      ? CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
+                      ? CircleAvatar(
+                          backgroundImage: NetworkImage(user!.photoURL!),
+                        )
                       : const CircleAvatar(child: Icon(Icons.person)),
                   decoration: const BoxDecoration(color: Colors.blue),
                 );
@@ -110,7 +114,12 @@ class FriendGraphWidget extends StatefulWidget {
   final int depth;
   final String? title;
 
-  const FriendGraphWidget({super.key, this.userUid, this.depth = 0, this.title});
+  const FriendGraphWidget({
+    super.key,
+    this.userUid,
+    this.depth = 0,
+    this.title,
+  });
 
   @override
   State<FriendGraphWidget> createState() => _FriendGraphWidgetState();
@@ -172,83 +181,88 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : friends.isEmpty
-            ? const Center(child: Text("No friends found"))
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  final center = Offset(
-                    constraints.maxWidth / 2,
-                    constraints.maxHeight / 2 - 100,
-                  );
-                  const double nodeRadius = 40;
-                  const double orbitRadius = 120;
+        ? const Center(child: Text("No friends found"))
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              final center = Offset(
+                constraints.maxWidth / 2,
+                constraints.maxHeight / 2 - 100,
+              );
+              const double nodeRadius = 40;
+              const double orbitRadius = 120;
 
-                  List<Offset> friendPositions = [];
-                  for (int i = 0; i < friends.length; i++) {
-                    final angle = 2 * pi * i / friends.length;
-                    final dx = center.dx + orbitRadius * cos(angle);
-                    final dy = center.dy + orbitRadius * sin(angle);
-                    friendPositions.add(Offset(dx, dy));
-                  }
+              List<Offset> friendPositions = [];
+              for (int i = 0; i < friends.length; i++) {
+                final angle = 2 * pi * i / friends.length;
+                final dx = center.dx + orbitRadius * cos(angle);
+                final dy = center.dy + orbitRadius * sin(angle);
+                friendPositions.add(Offset(dx, dy));
+              }
 
-                  return Stack(
-                    children: [
-                      CustomPaint(
-                        size: Size.infinite,
-                        painter: LinePainter(
-                          center: center,
-                          friendPositions: friendPositions,
-                        ),
-                      ),
-                      Positioned(
-                        left: center.dx - nodeRadius,
-                        top: center.dy - nodeRadius,
-                        width: nodeRadius * 2,
-                        height: nodeRadius * 2,
-                        child: _buildNode(centerName, color: Colors.blueAccent),
-                      ),
-                      for (int i = 0; i < friends.length; i++)
-                        Positioned(
-                          left: friendPositions[i].dx - nodeRadius,
-                          top: friendPositions[i].dy - nodeRadius,
-                          width: nodeRadius * 2,
-                          height: nodeRadius * 2,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (widget.depth < 1) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => Scaffold(
-                                      appBar: AppBar(
-                                        title: Text("${friends[i]['username']}'s Friends"),
-                                      ),
-                                      body: FriendGraphWidget(
-                                        userUid: friends[i]['uid'],
-                                        depth: widget.depth + 1,
-                                        title: friends[i]['username'],
-                                      ),
+              return Stack(
+                children: [
+                  CustomPaint(
+                    size: Size.infinite,
+                    painter: LinePainter(
+                      center: center,
+                      friendPositions: friendPositions,
+                    ),
+                  ),
+                  Positioned(
+                    left: center.dx - nodeRadius,
+                    top: center.dy - nodeRadius,
+                    width: nodeRadius * 2,
+                    height: nodeRadius * 2,
+                    child: _buildNode(centerName, color: Colors.blueAccent),
+                  ),
+                  for (int i = 0; i < friends.length; i++)
+                    Positioned(
+                      left: friendPositions[i].dx - nodeRadius,
+                      top: friendPositions[i].dy - nodeRadius,
+                      width: nodeRadius * 2,
+                      height: nodeRadius * 2,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (widget.depth < 1) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Scaffold(
+                                  appBar: AppBar(
+                                    title: Text(
+                                      "${friends[i]['username']}'s Friends",
                                     ),
                                   ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        "You can only view up to second-degree friends."),
+                                  body: FriendGraphWidget(
+                                    userUid: friends[i]['uid'],
+                                    depth: widget.depth + 1,
+                                    title: friends[i]['username'],
                                   ),
-                                );
-                              }
-                            },
-                            child: _buildNode(
-                              friends[i]['username'] ?? 'Unknown',
-                              color: widget.depth < 1 ? Colors.orangeAccent : Colors.grey,
-                            ),
-                          ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "You can only view up to second-degree friends.",
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: _buildNode(
+                          friends[i]['username'] ?? 'Unknown',
+                          color: widget.depth < 1
+                              ? Colors.orangeAccent
+                              : Colors.grey,
                         ),
-                    ],
-                  );
-                },
+                      ),
+                    ),
+                ],
               );
+            },
+          );
   }
 
   Widget _buildNode(String name, {required Color color}) {
