@@ -8,57 +8,100 @@ class MakePlan extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: const Text(
-          'Make your plan',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          'Make Your Plan',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: Colors.cyanAccent,
+          ),
         ),
         centerTitle: true,
+        elevation: 10,
       ),
-      body: Stack(
-        children: [
-          // Main content
-          Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(height: 150),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 300,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Main content
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(height: 120),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: TextField(
                       decoration: InputDecoration(
                         hintText: 'Enter your plan...',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.edit),
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(Icons.edit),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(18),
                       ),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
 
-          // Bottom-center FAB
-          Positioned(
-            bottom: 200, // bottom padding
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                width: 150, // wider button
-                height: 60,
-                child: FloatingActionButton.extended(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/firstdeg');
-                  },
-
-                  label: const Text('Next'),
+            // Bottom-center FAB
+            Positioned(
+              bottom: 350,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 160,
+                  height: 55,
+                  child: FloatingActionButton.extended(
+                    backgroundColor: const Color(0xFF00F5FF),
+                    foregroundColor: Colors.black,
+                    elevation: 6,
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/firstdeg');
+                    },
+                    label: const Text(
+                      'Next',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -33,8 +33,7 @@ class _FriendsPageState extends State<FriendsPage> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredFriends = _friends
-          .where((friend) =>
-              friend['username']!.toLowerCase().contains(query))
+          .where((friend) => friend['username']!.toLowerCase().contains(query))
           .toList();
     });
   }
@@ -63,10 +62,6 @@ class _FriendsPageState extends State<FriendsPage> {
         friends.add({'uid': friendUid, 'username': username});
       }
 
-      if (kDebugMode) {
-        debugPrint("Loaded friends: $friends");
-      }
-
       setState(() {
         _friends = friends;
         _filteredFriends = friends;
@@ -76,9 +71,11 @@ class _FriendsPageState extends State<FriendsPage> {
       if (kDebugMode) {
         debugPrint("Error loading friends: $e");
       }
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -87,30 +84,28 @@ class _FriendsPageState extends State<FriendsPage> {
     if (user == null) return;
 
     try {
-      final userRef =
-          FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final friendRef =
-          FirebaseFirestore.instance.collection('users').doc(friendUid);
+      final userRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
+      final friendRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(friendUid);
 
-      // Remove friend from current user's list
       final userDoc = await userRef.get();
       final userFriends = List.from(userDoc.data()?['friends'] ?? []);
       userFriends.removeWhere((f) => f['uid'] == friendUid);
       await userRef.update({'friends': userFriends});
 
-      // Remove current user from friend's list
       final friendDoc = await friendRef.get();
       final theirFriends = List.from(friendDoc.data()?['friends'] ?? []);
       theirFriends.removeWhere((f) => f['uid'] == user.uid);
       await friendRef.update({'friends': theirFriends});
 
-      if (kDebugMode) {
-        debugPrint("Removed friendship between ${user.uid} and $friendUid");
-      }
-
       _loadFriends(); // Refresh UI
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
         const SnackBar(content: Text('Friend removed')),
       );
     } catch (e) {
@@ -124,15 +119,16 @@ class _FriendsPageState extends State<FriendsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Friend'),
-        content: Text('Are you sure you want to remove $username as a friend?'),
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('Remove Friend', style: TextStyle(color: Colors.cyanAccent)),
+        content: Text('Remove $username?', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           TextButton(
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: const Text('Remove', style: TextStyle(color: Colors.redAccent)),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -147,24 +143,34 @@ class _FriendsPageState extends State<FriendsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Friends")),
+      backgroundColor: const Color(0xFF0F0F2D),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1F1F3F),
+        title: const Text("Your Friends", style: TextStyle(color: Colors.cyanAccent)),
+        iconTheme: const IconThemeData(color: Colors.cyanAccent),
+      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.cyanAccent))
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(12.0),
                   child: TextField(
                     controller: _searchController,
+                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: const Color(0xFF1C1B33),
+                      prefixIcon: const Icon(Icons.search, color: Colors.cyanAccent),
                       hintText: 'Search friends...',
+                      hintStyle: const TextStyle(color: Colors.white54),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear),
+                              icon: const Icon(Icons.clear, color: Colors.redAccent),
                               onPressed: () {
                                 _searchController.clear();
                                 _filterFriends();
@@ -176,20 +182,40 @@ class _FriendsPageState extends State<FriendsPage> {
                 ),
                 Expanded(
                   child: _filteredFriends.isEmpty
-                      ? const Center(child: Text("No matching friends found."))
+                      ? const Center(
+                          child: Text(
+                            "No matching friends found.",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
                       : ListView.builder(
                           itemCount: _filteredFriends.length,
                           itemBuilder: (context, index) {
                             final friend = _filteredFriends[index];
-                            return ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(friend['username'] ?? 'Unknown'),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.remove_circle,
-                                    color: Colors.red),
-                                tooltip: "Remove friend",
-                                onPressed: () => _confirmAndRemove(
-                                    friend['uid']!, friend['username']!),
+                            return Card(
+                              color: const Color(0xFF1F1F3F),
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: ListTile(
+                                leading: const Icon(Icons.person, color: Colors.cyanAccent),
+                                title: Text(
+                                  friend['username'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                                  tooltip: "Remove friend",
+                                  onPressed: () => _confirmAndRemove(
+                                    friend['uid']!,
+                                    friend['username']!,
+                                  ),
+                                ),
                               ),
                             );
                           },

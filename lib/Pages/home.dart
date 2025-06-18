@@ -12,16 +12,29 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color.fromARGB(255, 75, 71, 106), Color.fromARGB(255, 46, 40, 124), Color.fromARGB(255, 21, 21, 120)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: const Text(
           'Hangout Planner',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.cyanAccent,
+          ),
         ),
         centerTitle: true,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.logout, color: Colors.cyanAccent),
               onPressed: () {
                 FirebaseAuth.instance.signOut();
                 Navigator.pushReplacementNamed(context, '/login');
@@ -29,72 +42,107 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ],
+        elevation: 10,
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                String userName = 'User';
-                String userUsername = '';
+  backgroundColor: const Color(0xFF0F0F2D), // Dark cyberpunk background
+  child: ListView(
+    padding: EdgeInsets.zero,
+    children: <Widget>[
+      StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user?.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          String userName = 'User';
+          String userUsername = '';
 
-                if (snapshot.hasData && snapshot.data!.exists) {
-                  userName = snapshot.data!['name'] ?? 'User';
-                  userUsername = snapshot.data!['username'] ?? '';
-                }
+          if (snapshot.hasData && snapshot.data!.exists) {
+            userName = snapshot.data!['name'] ?? 'User';
+            userUsername = snapshot.data!['username'] ?? '';
+          }
 
-                return UserAccountsDrawerHeader(
-                  accountName: Text(userName),
-                  accountEmail: Text(userUsername.isNotEmpty ? '@$userUsername' : ''),
-                  currentAccountPicture: user?.photoURL != null
-                      ? CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
-                      : const CircleAvatar(child: Icon(Icons.person)),
-                  decoration: const BoxDecoration(color: Colors.blue),
-                );
-              },
+          return UserAccountsDrawerHeader(
+            accountName: Text(
+              userName,
+              style: const TextStyle(
+                color: Colors.cyanAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.message),
-              title: const Text('Invites'),
-              onTap: () => Navigator.pushNamed(context, '/invitespage'),
+            accountEmail: Text(
+              userUsername.isNotEmpty ? '@$userUsername' : '',
+              style: const TextStyle(
+                color: Colors.white70,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.account_circle),
-              title: const Text('Friends'),
-              onTap: () => Navigator.pushNamed(context, '/friendspage'),
+            currentAccountPicture: user?.photoURL != null
+                ? CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
+                : const CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: Icon(Icons.person, color: Colors.cyanAccent),
+                  ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.notification_add),
-              title: const Text('Notifications'),
-              onTap: () => Navigator.pushNamed(context, '/Notificationpage'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
-      body: const FriendGraphWidget(),
+      _buildCyberTile(
+        icon: Icons.message,
+        title: 'Invites',
+        onTap: () => Navigator.pushNamed(context, '/invitespage'),
+      ),
+      _buildCyberTile(
+        icon: Icons.account_circle,
+        title: 'Friends',
+        onTap: () => Navigator.pushNamed(context, '/friendspage'),
+      ),
+      _buildCyberTile(
+        icon: Icons.notification_add,
+        title: 'Notifications',
+        onTap: () => Navigator.pushNamed(context, '/Notificationpage'),
+      ),
+    ],
+  ),
+),
+
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: FriendGraphWidget(userUid: user?.uid),
+      ),
       floatingActionButton: Stack(
         children: <Widget>[
           Positioned(
             bottom: 16,
             left: 70,
             child: FloatingActionButton(
+              backgroundColor: const Color(0xFF00F5FF),
               heroTag: "fab1",
               onPressed: () => Navigator.pushNamed(context, '/search'),
-              child: const Icon(Icons.search),
+              child: const Icon(Icons.search, color: Colors.black),
             ),
           ),
           Positioned(
             bottom: 16,
             right: 50,
             child: FloatingActionButton.extended(
+              backgroundColor: const Color(0xFFFF0266),
               heroTag: "fab2",
               onPressed: () => Navigator.pushNamed(context, '/makeplan'),
-              icon: const Icon(Icons.edit),
+              icon: const Icon(Icons.edit, color: Colors.white),
               label: const Text("Make Plan"),
             ),
           ),
@@ -104,6 +152,26 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
+Widget _buildCyberTile({
+  required IconData icon,
+  required String title,
+  required VoidCallback onTap,
+}) {
+  return ListTile(
+    leading: Icon(icon, color: Colors.cyanAccent),
+    title: Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    hoverColor: Colors.cyan.withOpacity(0.1),
+    onTap: onTap,
+  );
+}
+
 
 class FriendGraphWidget extends StatefulWidget {
   final String? userUid;
@@ -227,7 +295,10 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                       const SizedBox(width: 12),
                       Text('${currentPage + 1} / $totalPages',
                           style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w500)),
+                              fontSize: 16,
+                               fontWeight: FontWeight.w500,
+                               color: Colors.black,
+                               )),
                       const SizedBox(width: 12),
                       ElevatedButton(
                         onPressed: currentPage < totalPages - 1
@@ -238,7 +309,12 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                                 });
                               }
                             : null,
-                        child: const Text('Next Friends'),
+                        child: const Text('Next Friends',
+                        style: TextStyle(
+                              
+                               color: Colors.black,
+                               ),
+                        ),
                       ),
                     ],
                   ),
@@ -256,7 +332,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
       return const Center(
         child: Text(
           'No friends found',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white),
         ),
       );
     }
@@ -289,7 +365,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
               top: center.dy - nodeRadius,
               width: nodeRadius * 2,
               height: nodeRadius * 2,
-              child: _buildNode(centerName, color: const Color.fromARGB(255, 0, 3, 9)),
+              child: _buildNode(centerName, color: Colors.deepPurpleAccent),
             ),
             for (int i = 0; i < friends.length; i++)
               Positioned(
@@ -330,7 +406,9 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                   },
                   child: _buildNode(
                     friends[i]['username'] ?? 'Unknown',
-                    color: widget.depth < 1 ? const Color.fromARGB(255, 20, 66, 130) : Colors.grey,
+                    color: widget.depth < 1
+                        ? const Color(0xFF00F5FF)
+                        : Colors.grey.shade700,
                   ),
                 ),
               ),
@@ -345,8 +423,13 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(2, 2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.6),
+            blurRadius: 12,
+            spreadRadius: 4,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       alignment: Alignment.center,
@@ -356,7 +439,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
           child: Text(
             name,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: const TextStyle(color: Colors.black, fontSize: 12),
           ),
         ),
       ),
@@ -380,8 +463,8 @@ class LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const double nodeRadius = 40;
     final Paint linePaint = Paint()
-      ..color = Colors.grey
-      ..strokeWidth = 2;
+      ..color = Colors.cyanAccent.withOpacity(0.3)
+      ..strokeWidth = 1.8;
 
     for (final friendPos in friendPositions) {
       final direction = (friendPos - center).normalize();
@@ -401,3 +484,4 @@ extension Normalize on Offset {
     return len == 0 ? this : this / len;
   }
 }
+

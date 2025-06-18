@@ -46,14 +46,10 @@ class _FirstDegState extends State<FirstDeg> {
           .collection('users')
           .doc(uid)
           .get();
-
       final username = userDoc.data()?['username'] ?? 'Unknown';
+
       if (widget.depth == 0) {
-        if (mounted) {
-          setState(() {
-            centerName = username;
-          });
-        }
+        if (mounted) setState(() => centerName = username);
       }
 
       final friendsList = (userDoc.data()?['friends'] as List?) ?? [];
@@ -61,15 +57,14 @@ class _FirstDegState extends State<FirstDeg> {
 
       for (final friend in friendsList) {
         final friendUid = friend['uid'];
-
         if (widget.excludedUids.contains(friendUid)) continue;
 
         final friendDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(friendUid)
             .get();
-
         final friendName = friendDoc.data()?['username'] ?? 'Unknown';
+
         fetchedFriends.add({'uid': friendUid, 'username': friendName});
       }
 
@@ -81,9 +76,7 @@ class _FirstDegState extends State<FirstDeg> {
       }
     } catch (e) {
       debugPrint("Error loading friends: $e");
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -95,19 +88,39 @@ class _FirstDegState extends State<FirstDeg> {
     final visibleFriends = friends.sublist(startIndex, endIndex);
 
     return Scaffold(
-      appBar: AppBar(title: Text("$centerName's Friends")),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : friends.isEmpty
-              ? const Center(child: Text("No friends found"))
+      appBar: AppBar(
+        title: Text("$centerName's Friends"),
+        backgroundColor: const Color(0xFF1C1B33),
+        foregroundColor: Colors.white,
+        elevation: 4,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF101722), Color(0xFF2E2C56)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : friends.isEmpty
+              ? const Center(
+                  child: Text(
+                    "No friends found",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
               : Column(
                   children: [
+                    const SizedBox(height: 20),
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final center = Offset(
                             constraints.maxWidth / 2,
-                            constraints.maxHeight / 2 - 100,
+                            constraints.maxHeight / 2 - 30,
                           );
                           const double nodeRadius = 40;
                           const double orbitRadius = 120;
@@ -121,102 +134,112 @@ class _FirstDegState extends State<FirstDeg> {
                           }
 
                           return AnimatedSwitcher(
-  duration: const Duration(milliseconds: 300),
-  switchInCurve: Curves.easeIn,
-  switchOutCurve: Curves.easeOut,
-  transitionBuilder: (Widget child, Animation<double> animation) {
-    return FadeTransition(
-      opacity: animation,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-          CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-        child: child,
-      ),
-    );
-  },
-  child: KeyedSubtree(
-    key: ValueKey(currentPage),
-    child: Stack(
-      children: [
-        CustomPaint(
-          size: Size.infinite,
-          painter: LinePainter(
-            center: center,
-            friendPositions: friendPositions,
-          ),
-        ),
-        Positioned(
-          left: center.dx - nodeRadius,
-          top: center.dy - nodeRadius,
-          width: nodeRadius * 2,
-          height: nodeRadius * 2,
-          child: _buildNode(centerName,
-              color: Colors.blueAccent),
-        ),
-        for (int i = 0; i < visibleFriends.length; i++)
-          Positioned(
-            left: friendPositions[i].dx - nodeRadius,
-            top: friendPositions[i].dy - nodeRadius,
-            width: nodeRadius * 2,
-            height: nodeRadius * 2,
-            child: GestureDetector(
-              onTap: () async {
-                if (widget.depth < 1) {
-                  final currentUserUid =
-                      FirebaseAuth.instance.currentUser?.uid ?? '';
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FirstDeg(
-                        userUid: visibleFriends[i]['uid'],
-                        centerName: visibleFriends[i]['username'],
-                        depth: widget.depth + 1,
-                        excludedUids: [
-                          ...widget.excludedUids,
-                          ...friends.map((f) => f['uid']!),
-                          currentUserUid,
-                        ],
-                      ),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "You can only view up to second-degree friends.",
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: _buildNode(
-                visibleFriends[i]['username'] ?? 'Unknown',
-                color: widget.depth < 1
-                    ? Colors.orangeAccent
-                    : Colors.grey,
-              ),
-            ),
-          ),
-      ],
-    ),
-  ),
-);
+                            duration: const Duration(milliseconds: 300),
+                            child: KeyedSubtree(
+                              key: ValueKey(currentPage),
+                              child: Stack(
+                                children: [
+                                  CustomPaint(
+                                    size: Size.infinite,
+                                    painter: LinePainter(
+                                      center: center,
+                                      friendPositions: friendPositions,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: center.dx - nodeRadius,
+                                    top: center.dy - nodeRadius,
+                                    width: nodeRadius * 2,
+                                    height: nodeRadius * 2,
+                                    child: _buildNode(
+                                      centerName,
+                                      color: const Color(0xFF8144D6),
+                                    ),
+                                  ),
+                                  for (
+                                    int i = 0;
+                                    i < visibleFriends.length;
+                                    i++
+                                  )
+                                    Positioned(
+                                      left: friendPositions[i].dx - nodeRadius,
+                                      top: friendPositions[i].dy - nodeRadius,
+                                      width: nodeRadius * 2,
+                                      height: nodeRadius * 2,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (widget.depth < 1) {
+                                            final currentUserUid =
+                                                FirebaseAuth
+                                                    .instance
+                                                    .currentUser
+                                                    ?.uid ??
+                                                '';
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => FirstDeg(
+                                                  userUid:
+                                                      visibleFriends[i]['uid'],
+                                                  centerName:
+                                                      visibleFriends[i]['username'],
+                                                  depth: widget.depth + 1,
+                                                  excludedUids: [
+                                                    ...widget.excludedUids,
+                                                    ...friends.map(
+                                                      (f) => f['uid']!,
+                                                    ),
+                                                    currentUserUid,
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "You can only view up to second-degree friends.",
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: _buildNode(
+                                          visibleFriends[i]['username'] ??
+                                              'Unknown',
+                                          color: const Color(0xFF28E8F2),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 20.0),
+                      padding: const EdgeInsets.only(bottom: 130.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white10,
+                              foregroundColor: Colors.white,
+                            ),
                             onPressed: currentPage > 0
                                 ? () => setState(() => currentPage--)
                                 : null,
                             child: const Text("Previous Friends"),
                           ),
                           ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white10,
+                              foregroundColor: Colors.white,
+                            ),
                             onPressed: currentPage < totalPages - 1
                                 ? () => setState(() => currentPage++)
                                 : null,
@@ -227,6 +250,8 @@ class _FirstDegState extends State<FirstDeg> {
                     ),
                   ],
                 ),
+        ),
+      ),
     );
   }
 
@@ -235,8 +260,12 @@ class _FirstDegState extends State<FirstDeg> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(2, 2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.6),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
         ],
       ),
       alignment: Alignment.center,
@@ -264,7 +293,7 @@ class LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const double nodeRadius = 40;
     final Paint linePaint = Paint()
-      ..color = Colors.grey
+      ..color = const Color(0xFF4DD0E1)
       ..strokeWidth = 2;
 
     for (final friendPos in friendPositions) {
