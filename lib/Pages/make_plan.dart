@@ -45,28 +45,57 @@ class MakePlan extends StatelessWidget {
                 const SizedBox(height: 120),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Enter your plan...',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        prefixIcon: const Icon(Icons.edit),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(18),
+                        child: const TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Enter your plan...',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            prefixIcon: Icon(Icons.edit),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(18),
+                          ),
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                      const SizedBox(height: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const TextField(
+                          decoration: InputDecoration(
+                            hintText: "Enter the plan's description...",
+                            hintStyle: TextStyle(color: Colors.grey),
+                            prefixIcon: Icon(Icons.description),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(18),
+                          ),
+                          style: TextStyle(fontSize: 16),
+                          maxLines: 3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -82,8 +111,8 @@ class MakePlan extends StatelessWidget {
                   width: 160,
                   height: 55,
                   child: FloatingActionButton.extended(
-                    backgroundColor: const Color(0xFF00F5FF),
-                    foregroundColor: Colors.black,
+                    backgroundColor: const Color(0xFF00F5FF), 
+                    foregroundColor: Colors.black, 
                     elevation: 6,
                     onPressed: () {
                       Navigator.pushNamed(context, '/firstdeg');
