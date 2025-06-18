@@ -15,11 +15,7 @@ class HomePage extends StatelessWidget {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color.fromARGB(255, 75, 71, 106),
-                Color.fromARGB(255, 46, 40, 124),
-                Color.fromARGB(255, 21, 21, 120),
-              ],
+              colors: [Color.fromARGB(255, 75, 71, 106), Color.fromARGB(255, 46, 40, 124), Color.fromARGB(255, 21, 21, 120)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -78,12 +74,12 @@ class HomePage extends StatelessWidget {
                   ),
                   accountEmail: Text(
                     userUsername.isNotEmpty ? '@$userUsername' : '',
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                    ),
                   ),
                   currentAccountPicture: user?.photoURL != null
-                      ? CircleAvatar(
-                          backgroundImage: NetworkImage(user!.photoURL!),
-                        )
+                      ? CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
                       : const CircleAvatar(
                           backgroundColor: Colors.black54,
                           child: Icon(Icons.person, color: Colors.cyanAccent),
@@ -116,7 +112,6 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -166,7 +161,10 @@ Widget _buildCyberTile({
     leading: Icon(icon, color: Colors.cyanAccent),
     title: Text(
       title,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      ),
     ),
     hoverColor: Colors.cyan.withOpacity(0.1),
     onTap: onTap,
@@ -203,22 +201,16 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
-  Future<List<Map<String, String>>> _resolveUsernames(
-    List<Map<String, String>> friends,
-  ) async {
+  Future<List<Map<String, String>>> _resolveUsernames(List<Map<String, String>> friends) async {
     List<Map<String, String>> resolved = [];
     for (var friend in friends) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(friend['uid'])
-          .get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(friend['uid']).get();
       final username = doc.data()?['username'] ?? 'Unknown';
       resolved.add({'uid': friend['uid']!, 'username': username});
     }
@@ -235,10 +227,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
     }
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Center(child: Text('No data available.'));
@@ -272,10 +261,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
 
             final totalPages = (allFriends.length / friendsPerPage).ceil();
             final startIndex = currentPage * friendsPerPage;
-            final endIndex = min(
-              startIndex + friendsPerPage,
-              allFriends.length,
-            );
+            final endIndex = min(startIndex + friendsPerPage, allFriends.length);
             final currentFriends = allFriends.sublist(startIndex, endIndex);
 
             return Stack(
@@ -294,6 +280,11 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00F5FF),
+                          foregroundColor: Colors.black,
+                          disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+                        ),
                         onPressed: currentPage > 0
                             ? () {
                                 setState(() {
@@ -310,11 +301,16 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00F5FF),
+                          foregroundColor: Colors.black,
+                          disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+                        ),
                         onPressed: currentPage < totalPages - 1
                             ? () {
                                 setState(() {
@@ -323,10 +319,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                                 });
                               }
                             : null,
-                        child: const Text(
-                          'Next Friends',
-                          style: TextStyle(color: Colors.black),
-                        ),
+                        child: const Text('Next Friends'),
                       ),
                     ],
                   ),
@@ -341,15 +334,25 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
 
   Widget _buildGraph(BuildContext context, List<Map<String, String>> friends) {
     if (friends.isEmpty) {
-      return const Center(
-        child: Text(
-          'No friends found',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final center = Offset(
+            constraints.maxWidth / 2,
+            constraints.maxHeight / 2 - 100,
+          );
+          const double nodeRadius = 40;
+          return Stack(
+            children: [
+              Positioned(
+                left: center.dx - nodeRadius,
+                top: center.dy - nodeRadius,
+                width: nodeRadius * 2,
+                height: nodeRadius * 2,
+                child: _buildNode(centerName, color: Colors.deepPurpleAccent),
+              ),
+            ],
+          );
+        },
       );
     }
 
@@ -374,10 +377,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
           children: [
             CustomPaint(
               size: Size.infinite,
-              painter: LinePainter(
-                center: center,
-                friendPositions: friendPositions,
-              ),
+              painter: LinePainter(center: center, friendPositions: friendPositions),
             ),
             Positioned(
               left: center.dx - nodeRadius,
@@ -401,49 +401,17 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                         context,
                         MaterialPageRoute(
                           builder: (context) => Scaffold(
-                            backgroundColor: const Color(
-                              0xFF0F0F2D,
-                            ), // Dark cyberpunk background
                             appBar: AppBar(
-                              backgroundColor: const Color(
-                                0xFF1CB5E0,
-                              ), // Neon blue gradient feel
-                              elevation: 10,
-                              shadowColor: Colors.cyanAccent.withOpacity(0.4),
-                              title: Text(
-                                "${friends[i]['username']}'s Friends",
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              iconTheme: const IconThemeData(
-                                color: Colors.black,
-                              ),
-                            ),
-                            body: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFF0F0F2D),
-                                    Color(0xFF000000),
-                                  ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                              ),
-                              child: FriendGraphWidget(
-                                userUid: friends[i]['uid'],
-                                depth: widget.depth + 1,
-                                title: friends[i]['username'],
-                                excludedUids: [
-                                  ...widget.excludedUids,
-                                  ...allFriends.map((f) => f['uid']!),
-                                  currentUserUid,
-                                ],
-                              ),
+                                title: Text("${friends[i]['username']}'s Friends")),
+                            body: FriendGraphWidget(
+                              userUid: friends[i]['uid'],
+                              depth: widget.depth + 1,
+                              title: friends[i]['username'],
+                              excludedUids: [
+                                ...widget.excludedUids,
+                                ...allFriends.map((f) => f['uid']!),
+                                currentUserUid,
+                              ],
                             ),
                           ),
                         ),
@@ -451,10 +419,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            "You can only view up to second-degree friends.",
-                          ),
-                        ),
+                            content: Text("You can only view up to second-degree friends.")),
                       );
                     }
                   },
