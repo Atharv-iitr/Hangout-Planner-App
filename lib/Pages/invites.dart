@@ -10,7 +10,7 @@ class InvitesPage extends StatelessWidget {
         title: const Text('Invites',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: 30,
         ),
         ),
         centerTitle: true,
