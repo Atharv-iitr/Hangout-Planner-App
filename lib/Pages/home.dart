@@ -81,7 +81,7 @@ class HomePage extends StatelessWidget {
         children: <Widget>[
           Positioned(
             bottom: 16,
-            left: 16,
+            left: 70,
             child: FloatingActionButton(
               heroTag: "fab1",
               onPressed: () => Navigator.pushNamed(context, '/search'),
@@ -90,7 +90,7 @@ class HomePage extends StatelessWidget {
           ),
           Positioned(
             bottom: 16,
-            right: 16,
+            right: 50,
             child: FloatingActionButton.extended(
               heroTag: "fab2",
               onPressed: () => Navigator.pushNamed(context, '/makeplan'),
@@ -111,19 +111,40 @@ class FriendGraphWidget extends StatefulWidget {
   final String? title;
   final List<String> excludedUids;
 
-  const FriendGraphWidget({super.key, this.userUid, this.depth = 0, this.title, this.excludedUids = const []});
+  const FriendGraphWidget({
+    super.key,
+    this.userUid,
+    this.depth = 0,
+    this.title,
+    this.excludedUids = const [],
+  });
 
   @override
   State<FriendGraphWidget> createState() => _FriendGraphWidgetState();
 }
 
-class _FriendGraphWidgetState extends State<FriendGraphWidget> {
+class _FriendGraphWidgetState extends State<FriendGraphWidget>
+    with TickerProviderStateMixin {
   String centerName = 'You';
+  List<Map<String, String>> allFriends = [];
+  int currentPage = 0;
+  static const int friendsPerPage = 8;
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  }
 
   Future<List<Map<String, String>>> _resolveUsernames(List<Map<String, String>> friends) async {
     List<Map<String, String>> resolved = [];
     for (var friend in friends) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(friend['uid']).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(friend['uid']).get();
       final username = doc.data()?['username'] ?? 'Unknown';
       resolved.add({'uid': friend['uid']!, 'username': username});
     }
@@ -142,10 +163,6 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Center(child: Text('No data available.'));
         }
@@ -157,7 +174,6 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
         centerName = username;
 
         final List<Map<String, String>> friends = [];
-
         for (final friend in friendsList) {
           if (friend is Map && friend.containsKey('uid')) {
             final friendUid = friend['uid'];
@@ -174,8 +190,64 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final resolvedFriends = friendSnapshot.data!;
-            return _buildGraph(context, resolvedFriends);
+            if (allFriends.isEmpty) {
+              allFriends = friendSnapshot.data!;
+              _controller.forward(from: 0);
+            }
+            final totalPages = (allFriends.length / friendsPerPage).ceil();
+
+            final startIndex = currentPage * friendsPerPage;
+            final endIndex =
+                min(startIndex + friendsPerPage, allFriends.length);
+            final currentFriends = allFriends.sublist(startIndex, endIndex);
+
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: FadeTransition(
+                    opacity: _animation,
+                    child: _buildGraph(context, currentFriends),
+                  ),
+                ),
+                Positioned(
+                  bottom: 150.0,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: currentPage > 0
+                            ? () {
+                                setState(() {
+                                  currentPage--;
+                                  _controller.forward(from: 0);
+                                });
+                              }
+                            : null,
+                        child: const Text('Previous Friends'),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('${currentPage + 1} / $totalPages',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: currentPage < totalPages - 1
+                            ? () {
+                                setState(() {
+                                  currentPage++;
+                                  _controller.forward(from: 0);
+                                });
+                              }
+                            : null,
+                        child: const Text('Next Friends'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
           },
         );
       },
@@ -220,7 +292,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
               top: center.dy - nodeRadius,
               width: nodeRadius * 2,
               height: nodeRadius * 2,
-              child: _buildNode(centerName, color: Colors.blueAccent),
+              child: _buildNode(centerName, color: const Color.fromARGB(255, 0, 3, 9)),
             ),
             for (int i = 0; i < friends.length; i++)
               Positioned(
@@ -231,19 +303,21 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
                 child: GestureDetector(
                   onTap: () {
                     if (widget.depth < 1) {
-                      final currentUserUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+                      final currentUserUid =
+                          FirebaseAuth.instance.currentUser?.uid ?? '';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => Scaffold(
-                            appBar: AppBar(title: Text("${friends[i]['username']}'s Friends")),
+                            appBar: AppBar(
+                                title: Text("${friends[i]['username']}'s Friends")),
                             body: FriendGraphWidget(
                               userUid: friends[i]['uid'],
                               depth: widget.depth + 1,
                               title: friends[i]['username'],
                               excludedUids: [
                                 ...widget.excludedUids,
-                                ...friends.map((f) => f['uid']!),
+                                ...allFriends.map((f) => f['uid']!),
                                 currentUserUid,
                               ],
                             ),
@@ -252,13 +326,14 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("You can only view up to second-degree friends.")),
+                        const SnackBar(
+                            content: Text("You can only view up to second-degree friends.")),
                       );
                     }
                   },
                   child: _buildNode(
                     friends[i]['username'] ?? 'Unknown',
-                    color: widget.depth < 1 ? Colors.orangeAccent : Colors.grey,
+                    color: widget.depth < 1 ? const Color.fromARGB(255, 20, 66, 130) : Colors.grey,
                   ),
                 ),
               ),
@@ -289,6 +364,12 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

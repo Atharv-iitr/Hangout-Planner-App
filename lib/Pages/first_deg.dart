@@ -121,95 +121,87 @@ class _FirstDegState extends State<FirstDeg> {
                           }
 
                           return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 600),
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return RotationTransition(
-                                turns: animation,
-                                child: FadeTransition(
-                                    opacity: animation, child: child),
-                              );
-                            },
-                            child: KeyedSubtree(
-                              key: ValueKey(currentPage),
-                              child: Stack(
-                                children: [
-                                  CustomPaint(
-                                    size: Size.infinite,
-                                    painter: LinePainter(
-                                      center: center,
-                                      friendPositions: friendPositions,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: center.dx - nodeRadius,
-                                    top: center.dy - nodeRadius,
-                                    width: nodeRadius * 2,
-                                    height: nodeRadius * 2,
-                                    child: _buildNode(centerName,
-                                        color: Colors.blueAccent),
-                                  ),
-                                  for (int i = 0;
-                                      i < visibleFriends.length;
-                                      i++)
-                                    Positioned(
-                                      left:
-                                          friendPositions[i].dx - nodeRadius,
-                                      top: friendPositions[i].dy - nodeRadius,
-                                      width: nodeRadius * 2,
-                                      height: nodeRadius * 2,
-                                      child: GestureDetector(
-                                        onTap: () async {
-                                          if (widget.depth < 1) {
-                                            final currentUserUid =
-                                                FirebaseAuth.instance
-                                                        .currentUser
-                                                        ?.uid ??
-                                                    '';
+  duration: const Duration(milliseconds: 300),
+  switchInCurve: Curves.easeIn,
+  switchOutCurve: Curves.easeOut,
+  transitionBuilder: (Widget child, Animation<double> animation) {
+    return FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+        child: child,
+      ),
+    );
+  },
+  child: KeyedSubtree(
+    key: ValueKey(currentPage),
+    child: Stack(
+      children: [
+        CustomPaint(
+          size: Size.infinite,
+          painter: LinePainter(
+            center: center,
+            friendPositions: friendPositions,
+          ),
+        ),
+        Positioned(
+          left: center.dx - nodeRadius,
+          top: center.dy - nodeRadius,
+          width: nodeRadius * 2,
+          height: nodeRadius * 2,
+          child: _buildNode(centerName,
+              color: Colors.blueAccent),
+        ),
+        for (int i = 0; i < visibleFriends.length; i++)
+          Positioned(
+            left: friendPositions[i].dx - nodeRadius,
+            top: friendPositions[i].dy - nodeRadius,
+            width: nodeRadius * 2,
+            height: nodeRadius * 2,
+            child: GestureDetector(
+              onTap: () async {
+                if (widget.depth < 1) {
+                  final currentUserUid =
+                      FirebaseAuth.instance.currentUser?.uid ?? '';
 
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => FirstDeg(
-                                                  userUid: visibleFriends[i]
-                                                      ['uid'],
-                                                  centerName:
-                                                      visibleFriends[i]
-                                                          ['username'],
-                                                  depth: widget.depth + 1,
-                                                  excludedUids: [
-                                                    ...widget.excludedUids,
-                                                    ...friends
-                                                        .map((f) => f['uid']!),
-                                                    currentUserUid,
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "You can only view up to second-degree friends.",
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        child: _buildNode(
-                                          visibleFriends[i]['username'] ??
-                                              'Unknown',
-                                          color: widget.depth < 1
-                                              ? Colors.orangeAccent
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FirstDeg(
+                        userUid: visibleFriends[i]['uid'],
+                        centerName: visibleFriends[i]['username'],
+                        depth: widget.depth + 1,
+                        excludedUids: [
+                          ...widget.excludedUids,
+                          ...friends.map((f) => f['uid']!),
+                          currentUserUid,
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "You can only view up to second-degree friends.",
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: _buildNode(
+                visibleFriends[i]['username'] ?? 'Unknown',
+                color: widget.depth < 1
+                    ? Colors.orangeAccent
+                    : Colors.grey,
+              ),
+            ),
+          ),
+      ],
+    ),
+  ),
+);
                         },
                       ),
                     ),
