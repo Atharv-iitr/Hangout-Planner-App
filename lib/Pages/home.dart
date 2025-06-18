@@ -190,15 +190,12 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (allFriends.isEmpty) {
-              allFriends = friendSnapshot.data!;
-              _controller.forward(from: 0);
-            }
-            final totalPages = (allFriends.length / friendsPerPage).ceil();
+            allFriends = friendSnapshot.data!;
+            _controller.forward(from: 0);
 
+            final totalPages = (allFriends.length / friendsPerPage).ceil();
             final startIndex = currentPage * friendsPerPage;
-            final endIndex =
-                min(startIndex + friendsPerPage, allFriends.length);
+            final endIndex = min(startIndex + friendsPerPage, allFriends.length);
             final currentFriends = allFriends.sublist(startIndex, endIndex);
 
             return Stack(
