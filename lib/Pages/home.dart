@@ -133,12 +133,14 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  _buildCyberTile(
-                    icon: Icons.home,
-                    title: 'Home',
-                    onTap: () {
+                  
+                  _buildCyberTile( // New Settings Tile
+                    icon: Icons.edit,
+                    title: 'Edit profile',
+                    onTap: () async { // Changed to async
                       Navigator.pop(context); // Close the drawer
-                      // Already on home page
+                      await Navigator.pushNamed(context, '/profilesettings'); // Wait for the settings page to close
+                      _fetchUserData(); // Re-fetch user data after returning
                     },
                   ),
                   _buildCyberTile(
@@ -164,31 +166,8 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pushNamed(context, '/planspage');
                     },
                   ),
-                  _buildCyberTile(
-                    icon: Icons.add_circle,
-                    title: 'Make a Plan',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/makeplan');
-                    },
-                  ),
-                  _buildCyberTile(
-                    icon: Icons.search,
-                    title: 'Search',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/search');
-                    },
-                  ),
-                  _buildCyberTile( // New Settings Tile
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    onTap: () async { // Changed to async
-                      Navigator.pop(context); // Close the drawer
-                      await Navigator.pushNamed(context, '/profilesettings'); // Wait for the settings page to close
-                      _fetchUserData(); // Re-fetch user data after returning
-                    },
-                  ),
+                  
+                  
                 ],
               );
             }
