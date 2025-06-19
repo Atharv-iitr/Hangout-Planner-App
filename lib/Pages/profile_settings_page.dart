@@ -1,31 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hangout_planner/Pages/home.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
-class ProfileSetupPage extends StatefulWidget {
-  final String uid;
-
-  const ProfileSetupPage({super.key, required this.uid});
+class ProfileSettingsPage extends StatefulWidget {
+  const ProfileSettingsPage({super.key});
 
   @override
-  State<ProfileSetupPage> createState() => _ProfileSetupPageState();
+  State<ProfileSettingsPage> createState() => _ProfileSettingsPageState();
 }
 
-class _ProfileSetupPageState extends State<ProfileSetupPage> {
+class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   final _bioController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  String? _profileImageUrl;
-  void _pickImage() {
-   
-    setState(() {
-      _profileImageUrl =
-          'https://via.placeholder.com/150';
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dummy image set (actual upload not implemented).')),
-      );
-    });
+  String? _currentProfileImageUrl;
+  File? _pickedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        _bioController.text = data?['biodata'] as String? ?? '';
+        _currentProfileImageUrl = data?['profileImageUrl'] as String?;
+        setState(() {});
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _pickedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    if (_pickedImage == null) return _currentProfileImageUrl;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final storageRef = FirebaseStorage.instance.ref().child('profile_images').child('${user.uid}.jpg');
+    await storageRef.putFile(_pickedImage!);
+    return await storageRef.getDownloadURL();
   }
 
   Future<void> _saveProfile() async {
@@ -36,16 +67,21 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     });
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(widget.uid).update({
-        'biodata': _bioController.text.trim(),
-        'profileImageUrl': _profileImageUrl,
-      });
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final imageUrl = await _uploadImage();
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'biodata': _bioController.text.trim(),
+          'profileImageUrl': imageUrl,
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       debugPrint('Error saving profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,8 +106,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Set Up Your Profile'),
-        automaticallyImplyLeading: false,
+        title: const Text('Profile Settings'),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -86,10 +121,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   child: CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.grey[200],
-                    backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
-                    child: _profileImageUrl == null || _profileImageUrl!.isEmpty
+                    backgroundImage: _pickedImage != null
+                        ? FileImage(_pickedImage!)
+                        : (_currentProfileImageUrl != null && _currentProfileImageUrl!.isNotEmpty
+                            ? NetworkImage(_currentProfileImageUrl!) as ImageProvider
+                            : null),
+                    child: (_pickedImage == null && (_currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty))
                         ? Icon(
                             Icons.camera_alt,
                             size: 40,
@@ -100,7 +137,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Tap to add profile picture',
+                  'Tap to change profile picture',
                   style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 30),
@@ -132,7 +169,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator()
-                      : const Text('Save Profile'),
+                      : const Text('Save Changes'),
                 ),
               ],
             ),

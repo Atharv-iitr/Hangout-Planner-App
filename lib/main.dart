@@ -10,7 +10,8 @@ import 'package:hangout_planner/Pages/make_plan.dart';
 import 'package:hangout_planner/Pages/notification.dart';
 import 'package:hangout_planner/Pages/search.dart';
 import 'package:hangout_planner/Pages/planspage.dart';
-import 'package:hangout_planner/Pages/otp_page.dart';
+import 'package:hangout_planner/Pages/otp_verification_page.dart';
+import 'package:hangout_planner/Pages/profile_settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,26 +38,17 @@ class MyApp extends StatelessWidget {
         },
       ),
       routes: {
-  '/planspage': (context) => const PlansPage(),
-  '/home': (context) => const HomePage(),
-  '/invitespage': (context) => const InvitesPage(),
-  '/friendspage': (context) => const FriendsPage(),
-  '/Notificationpage': (context) => const NotificationsPage(),
-  '/makeplan': (context) => MakePlan(),
-  '/login': (context) => const LoginPage(),
-  '/search': (context) => const SearchPage(),
-  '/firstdeg': (context) => const FirstDeg(planTitle: '', planDesc: ''),
-  '/otp': (context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map;
-    return OTPPage(
-      phoneNumber: args['phoneNumber'],
-      isRegistration: args['isRegistration'] ?? false,
-      username: args['username'],
-      password: args['password'],
-      name: args['name'],
-    );
-  },
-},
+        '/planspage': (context) => const PlansPage(),
+        '/home': (context) => const HomePage(),
+        '/invitespage': (context) => const InvitesPage(),
+        '/friendspage': (context) => const FriendsPage(),
+        '/Notificationpage': (context) => const NotificationsPage(),
+        '/makeplan': (context) => MakePlan(),
+        '/login': (context) => const LoginPage(),
+        '/search': (context) => const SearchPage(),
+        '/firstdeg': (context) => const FirstDeg(planTitle: '', planDesc: ''),
+        '/profilesettings': (context) => const ProfileSettingsPage(),
+      },
     );
   }
 }

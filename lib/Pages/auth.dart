@@ -25,52 +25,12 @@ class AuthService {
     }
   }
 
-  // Verify phone number
-  Future<void> verifyPhoneNumber(String phoneNumber) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: '+91$phoneNumber',
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        debugPrint('Verification failed: ${e.message}');
-        throw e;
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        _verificationId = verificationId;
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-      },
-    );
-  }
-
-  // Verify OTP
-  Future<User?> verifyOTP(String smsCode) async {
-    try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
-    } catch (e) {
-      debugPrint('OTP verification error: $e');
-      throw FirebaseAuthException(
-        code: 'invalid-otp',
-        message: 'Invalid OTP entered',
-      );
-    }
-  }
-
-  // Register
+  // Register with username and phone number
   Future<User?> registerWithUsername(
     String username,
     String password,
     String name,
     String phoneNumber,
-    String? photoURL,
-    String? biodata,
   ) async {
     try {
       if (await _usernameExists(username)) {
@@ -94,11 +54,11 @@ class AuthService {
         'email': uniqueEmail,
         'name': name,
         'phoneNumber': phoneNumber,
-        'photoURL': photoURL,
-        'biodata': biodata,
         'createdAt': FieldValue.serverTimestamp(),
         'isApproved': true,
         'lastLogin': FieldValue.serverTimestamp(),
+        'biodata': '', 
+        'profileImageUrl': '', 
       });
 
       return userCredential.user;
@@ -115,7 +75,7 @@ class AuthService {
   }
 
   // Sign in using username and password
-  Future<User?> signInWithUsername(String username, String password) async {
+  Future<Map<String, dynamic>?> signInWithUsername(String username, String password) async {
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -132,25 +92,21 @@ class AuthService {
 
       final userData = snapshot.docs.first.data();
       final email = userData['email'] as String?;
+      final phoneNumber = userData['phoneNumber'] as String?; // Retrieve phone number
 
-      if (email == null) {
+      if (email == null || phoneNumber == null) {
         throw FirebaseAuthException(
           code: 'invalid-data',
-          message: 'Invalid account information.',
+          message: 'Invalid account information or missing phone number.',
         );
       }
 
-      final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      await _firestore
-          .collection('users')
-          .doc(credential.user?.uid)
-          .update({'lastLogin': FieldValue.serverTimestamp()});
-
-      return credential.user;
+      return {
+        'uid': userData['uid'],
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'password': password, 
+      };
     } on FirebaseAuthException catch (e) {
       debugPrint('Login error [${e.code}]: ${e.message}');
       if (e.code == 'wrong-password' || e.code == 'user-not-found' || e.code == 'invalid-email') {
@@ -169,6 +125,31 @@ class AuthService {
     }
   }
 
+  Future<User?> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await _firestore
+          .collection('users')
+          .doc(credential.user?.uid)
+          .update({'lastLogin': FieldValue.serverTimestamp()});
+
+      return credential.user;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Final sign-in error [${e.code}]: ${e.message}');
+      rethrow;
+    } catch (e) {
+      debugPrint('Unexpected final sign-in error: $e');
+      throw FirebaseAuthException(
+        code: 'final-signin-failed',
+        message: 'Could not complete sign-in after OTP.',
+      );
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {
@@ -179,14 +160,14 @@ class AuthService {
     }
   }
 
-  // Get current user data
+  // Get current user data 
   Future<Map<String, dynamic>?> getCurrentUserData() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return null;
 
       final doc = await _firestore.collection('users').doc(user.uid).get();
-      return doc.data();
+      return doc.data(); 
     } catch (e) {
       debugPrint('Fetch user data error: $e');
       return null;

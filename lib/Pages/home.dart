@@ -2,9 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'package:hangout_planner/Pages/auth.dart';
+import 'package:hangout_planner/Pages/profile_settings_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final AuthService _authService = AuthService();
+  Map<String, dynamic>? _userData;
+  late Future<void> _fetchUserDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDataFuture = _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    _userData = await _authService.getCurrentUserData();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +57,11 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: const Icon(Icons.logout, color: Colors.cyanAccent),
-              onPressed: () {
-                FirebaseAuth.instance.signOut();
-                Navigator.pushReplacementNamed(context, '/login');
+              onPressed: () async {
+                await _authService.signOut();
+                if (mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               },
             ),
           ),
@@ -45,90 +69,130 @@ class HomePage extends StatelessWidget {
         elevation: 10,
       ),
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0F0F2D),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                String userName = 'User';
-                String userUsername = '';
-                String? userPhotoURL;
-                String? userBiodata;
+        backgroundColor: const Color(0xFF0F0F2D), // Dark cyberpunk background
+        child: FutureBuilder<void>(
+          future: _fetchUserDataFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (_userData == null) {
+              return const Center(child: Text('User data not found.'));
+            } else {
+              final username = _userData!['username'] as String? ?? 'N/A';
+              final biodata = _userData!['biodata'] as String? ?? 'No biodata available.';
+              final profileImageUrl = _userData!['profileImageUrl'] as String? ?? '';
 
-                if (snapshot.hasData && snapshot.data!.exists) {
-                  userName = snapshot.data!['name'] ?? 'User';
-                  userUsername = snapshot.data!['username'] ?? '';
-                  userPhotoURL = snapshot.data!['photoURL'] as String?;
-                  userBiodata = snapshot.data!['biodata'] as String?;
-                }
-
-                return UserAccountsDrawerHeader(
-                  accountName: Text(
-                    userName,
-                    style: const TextStyle(
-                      color: Colors.cyanAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  accountEmail: Column( // Use a Column to display username and biodata
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userUsername.isNotEmpty ? '@$userUsername' : '',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                        ),
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  // Custom DrawerHeader to display profile info
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      if (userBiodata != null && userBiodata.isNotEmpty)
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.black54,
+                          backgroundImage: profileImageUrl.isNotEmpty
+                              ? NetworkImage(profileImageUrl)
+                              : null,
+                          child: profileImageUrl.isEmpty
+                              ? const Icon(Icons.person, color: Colors.cyanAccent, size: 50)
+                              : null,
+                        ),
+                        const SizedBox(height: 8),
                         Text(
-                          userBiodata,
+                          username,
+                          style: const TextStyle(
+                            color: Colors.cyanAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                          maxLines: 1, // Added to truncate long usernames
+                          overflow: TextOverflow.ellipsis, // Added ellipsis for truncated usernames
+                        ),
+                        Text(
+                          biodata,
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2, // Truncate biodata if it exceeds 2 lines
+                          overflow: TextOverflow.ellipsis, // Add ellipsis for truncated biodata
                         ),
-                    ],
-                  ),
-                  currentAccountPicture: userPhotoURL != null
-                      ? CircleAvatar(backgroundImage: NetworkImage(userPhotoURL))
-                      : const CircleAvatar(
-                          backgroundColor: Colors.black54,
-                          child: Icon(Icons.person, color: Colors.cyanAccent),
-                        ),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-            _buildCyberTile(
-              icon: Icons.message,
-              title: 'Invites',
-              onTap: () => Navigator.pushNamed(context, '/invitespage'),
-            ),
-            _buildCyberTile(
-              icon: Icons.account_circle,
-              title: 'Friends',
-              onTap: () => Navigator.pushNamed(context, '/friendspage'),
-            ),
-            _buildCyberTile(
-              icon: Icons.notification_add,
-              title: 'Notifications',
-              onTap: () => Navigator.pushNamed(context, '/Notificationpage'),
-            ),
-          ],
+                  _buildCyberTile(
+                    icon: Icons.home,
+                    title: 'Home',
+                    onTap: () {
+                      Navigator.pop(context); // Close the drawer
+                      // Already on home page
+                    },
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.message,
+                    title: 'Invites',
+                    onTap: () => Navigator.pushNamed(context, '/invitespage'),
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.account_circle,
+                    title: 'Friends',
+                    onTap: () => Navigator.pushNamed(context, '/friendspage'),
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.notification_add,
+                    title: 'Notifications',
+                    onTap: () => Navigator.pushNamed(context, '/Notificationpage'),
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.calendar_today,
+                    title: 'Plans',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/planspage');
+                    },
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.add_circle,
+                    title: 'Make a Plan',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/makeplan');
+                    },
+                  ),
+                  _buildCyberTile(
+                    icon: Icons.search,
+                    title: 'Search',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/search');
+                    },
+                  ),
+                  _buildCyberTile( // New Settings Tile
+                    icon: Icons.settings,
+                    title: 'Settings',
+                    onTap: () async { // Changed to async
+                      Navigator.pop(context); // Close the drawer
+                      await Navigator.pushNamed(context, '/profilesettings'); // Wait for the settings page to close
+                      _fetchUserData(); // Re-fetch user data after returning
+                    },
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
       body: Container(
@@ -336,7 +400,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(
-                        
+
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00F5FF),
                           foregroundColor: Colors.black,
@@ -351,7 +415,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                               }
                             : null,
                         child: const Text('Next Friends'),
-                        
+
                       ),
                     ],
                   ),
@@ -404,20 +468,14 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
           final dy = center.dy + orbitRadius * sin(angle);
           friendPositions.add(Offset(dx, dy));
         }
-          
+
         return Stack(
           children: [
             CustomPaint(
               size: Size.infinite,
               painter: LinePainter(center: center, friendPositions: friendPositions),
             ),
-            Positioned(
-              left: center.dx - nodeRadius,
-              top: center.dy - nodeRadius,
-              width: nodeRadius * 2,
-              height: nodeRadius * 2,
-              child: _buildNode(centerName, color: Colors.deepPurpleAccent),
-            ),
+            // Iterate over friend positions to create nodes
             for (int i = 0; i < friends.length; i++)
               Positioned(
                 left: friendPositions[i].dx - nodeRadius,
@@ -463,6 +521,14 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                   ),
                 ),
               ),
+            // The center node should be placed here after the loop
+            Positioned(
+              left: center.dx - nodeRadius,
+              top: center.dy - nodeRadius,
+              width: nodeRadius * 2,
+              height: nodeRadius * 2,
+              child: _buildNode(centerName, color: Colors.deepPurpleAccent),
+            ),
           ],
         );
       },
@@ -529,6 +595,7 @@ class LinePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
+// Extension to add normalize method to Offset
 extension Normalize on Offset {
   Offset normalize() {
     final len = distance;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hangout_planner/Pages/otp_page.dart';
+import 'package:hangout_planner/Pages/otp_verification_page.dart';
 
 class AuthForm extends StatefulWidget {
   final bool isLogin;
@@ -24,49 +24,31 @@ class AuthFormState extends State<AuthForm> {
 
     try {
       final authService = AuthService();
+      // Call the modified signInWithUsername which now returns user data including phone
+      final userData = await authService.signInWithUsername(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
+      );
+      if (!mounted) return;
 
-      if (widget.isLogin) {
-        // Sign in with username and password
-        final userCredential = await authService.signInWithUsername(
-          _usernameController.text.trim(),
-          _passwordController.text.trim(),
+      if (userData != null) {
+        // Navigate to OTP verification page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpVerificationPage(
+              phoneNumber: userData['phoneNumber'],
+              email: userData['email'],
+              password: userData['password'],
+            ),
+          ),
         );
-
-        if (userCredential != null) {
-          // User successfully signed in with username/password, retrieve phone number
-          final userData = await authService.getCurrentUserData();
-          final phoneNumber = userData?['phoneNumber'] as String?;
-
-          if (phoneNumber != null && phoneNumber.isNotEmpty) {
-            // Verify phone number (send OTP)
-            await authService.verifyPhoneNumber(phoneNumber);
-
-            if (!mounted) return;
-
-            // Navigate to OTP page for verification
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OTPPage(
-                  phoneNumber: phoneNumber,
-                  isRegistration: false,
-                ),
-              ),
-            ).then((_) {
-              setState(() => _isLoading = false);
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Phone number not found for this user.')),
-            );
-            setState(() => _isLoading = false);
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Wrong username or password')),
-          );
-          setState(() => _isLoading = false);
-        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Wrong username or password'),
+          ),
+        );
       }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
