@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? _verificationId;
 
   // Check if username already exists
   Future<bool> _usernameExists(String username) async {
@@ -17,15 +18,54 @@ class AuthService {
       return snapshot.docs.isNotEmpty;
     } catch (e) {
       debugPrint('Username check error: $e');
-      return true; // Fail safe
+      return true;
     }
   }
 
-  // Register with username instead of email
+  // Verify phone number
+  Future<void> verifyPhoneNumber(String phoneNumber) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: '+91$phoneNumber',
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await _auth.signInWithCredential(credential);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        debugPrint('Verification failed: ${e.message}');
+        throw e;
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        _verificationId = verificationId;
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
+  }
+
+  // Verify OTP
+  Future<User?> verifyOTP(String smsCode) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: smsCode,
+      );
+      final userCredential = await _auth.signInWithCredential(credential);
+      return userCredential.user;
+    } catch (e) {
+      debugPrint('OTP verification error: $e');
+      throw FirebaseAuthException(
+        code: 'invalid-otp',
+        message: 'Invalid OTP entered',
+      );
+    }
+  }
+
+  // Register with username and phone number
   Future<User?> registerWithUsername(
     String username,
     String password,
     String name,
+    String phoneNumber,
   ) async {
     try {
       if (await _usernameExists(username)) {
@@ -48,6 +88,7 @@ class AuthService {
         'username': username.toLowerCase(),
         'email': uniqueEmail,
         'name': name,
+        'phoneNumber': phoneNumber,
         'createdAt': FieldValue.serverTimestamp(),
         'isApproved': true,
         'lastLogin': FieldValue.serverTimestamp(),
@@ -145,9 +186,7 @@ class AuthService {
     }
   }
 
-  // Get current FirebaseAuth user
   User? getCurrentUser() => _auth.currentUser;
 
-  // Is a user currently logged in
   bool isLoggedIn() => _auth.currentUser != null;
 }

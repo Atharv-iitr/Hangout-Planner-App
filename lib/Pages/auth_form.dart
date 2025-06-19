@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hangout_planner/Pages/otp_page.dart';
 
 class AuthForm extends StatefulWidget {
   final bool isLogin;
@@ -23,29 +24,60 @@ class AuthFormState extends State<AuthForm> {
 
     try {
       final authService = AuthService();
-      User? user = await authService.signInWithUsername(
-        _usernameController.text.trim(),
-        _passwordController.text.trim(),
-      );
-      if (!mounted) return;
 
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Wrong username or password'),
-          ),
+      if (widget.isLogin) {
+        // Sign in with username and password
+        final userCredential = await authService.signInWithUsername(
+          _usernameController.text.trim(),
+          _passwordController.text.trim(),
         );
-      } else {
-        Navigator.pushReplacementNamed(context, '/home');
+
+        if (userCredential != null) {
+          // User successfully signed in with username/password, retrieve phone number
+          final userData = await authService.getCurrentUserData();
+          final phoneNumber = userData?['phoneNumber'] as String?;
+
+          if (phoneNumber != null && phoneNumber.isNotEmpty) {
+            // Verify phone number (send OTP)
+            await authService.verifyPhoneNumber(phoneNumber);
+
+            if (!mounted) return;
+
+            // Navigate to OTP page for verification
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OTPPage(
+                  phoneNumber: phoneNumber,
+                  isRegistration: false,
+                ),
+              ),
+            ).then((_) {
+              setState(() => _isLoading = false);
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Phone number not found for this user.')),
+            );
+            setState(() => _isLoading = false);
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Wrong username or password')),
+          );
+          setState(() => _isLoading = false);
+        }
       }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? 'Wrong username or password'),
-        ),
+        SnackBar(content: Text(e.message ?? 'Authentication failed')),
+      );
+    } catch (e) {
+      debugPrint('Unexpected error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An unexpected error occurred.')),
       );
     } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -59,9 +91,7 @@ class AuthFormState extends State<AuthForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign In'),
-      ),
+      appBar: AppBar(title: Text(widget.isLogin ? 'Sign In' : 'Sign Up')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -106,7 +136,7 @@ class AuthFormState extends State<AuthForm> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
@@ -114,7 +144,7 @@ class AuthFormState extends State<AuthForm> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator()
-                    : const Text('Sign In'),
+                    : Text(widget.isLogin ? 'Sign In' : 'Sign Up'),
               ),
             ],
           ),
