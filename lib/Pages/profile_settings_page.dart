@@ -104,9 +104,17 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    const neonPurple = Color(0xFF9D00FF);
+    const neonBlue = Color(0xFF00FFFF);
+    const neonPink = Color(0xFFFF00D6);
+    const darkBackground = Color(0xFF0D0D0D);
+
     return Scaffold(
+      backgroundColor: darkBackground,
       appBar: AppBar(
         title: const Text('Profile Settings'),
+        backgroundColor: Colors.black,
+        foregroundColor: neonPink,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -118,21 +126,33 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
               children: [
                 GestureDetector(
                   onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: _pickedImage != null
-                        ? FileImage(_pickedImage!)
-                        : (_currentProfileImageUrl != null && _currentProfileImageUrl!.isNotEmpty
-                            ? NetworkImage(_currentProfileImageUrl!) as ImageProvider
-                            : null),
-                    child: (_pickedImage == null && (_currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty))
-                        ? Icon(
-                            Icons.camera_alt,
-                            size: 40,
-                            color: Colors.grey[600],
-                          )
-                        : null,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: neonPink.withOpacity(0.6),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.grey[900],
+                      backgroundImage: _pickedImage != null
+                          ? FileImage(_pickedImage!)
+                          : (_currentProfileImageUrl != null && _currentProfileImageUrl!.isNotEmpty
+                              ? NetworkImage(_currentProfileImageUrl!) as ImageProvider
+                              : null),
+                      child: (_pickedImage == null && (_currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty))
+                          ? Icon(
+                              Icons.camera_alt,
+                              size: 40,
+                              color: neonBlue,
+                            )
+                          : null,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -145,11 +165,22 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                   controller: _bioController,
                   maxLines: 5,
                   minLines: 3,
-                  decoration: const InputDecoration(
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
                     labelText: 'Biodata (Tell us about yourself)',
+                    labelStyle: const TextStyle(color: neonPink),
                     alignLabelWithHint: true,
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: neonBlue),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: neonPurple),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: neonBlue, width: 2),
+                    ),
                     hintText: 'e.g., "Passionate about tech, loves hiking, and enjoys coffee."',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -166,9 +197,15 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                   onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: neonPurple,
+                    foregroundColor: Colors.white,
+                    shadowColor: neonPurple,
+                    elevation: 10,
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        )
                       : const Text('Save Changes'),
                 ),
               ],

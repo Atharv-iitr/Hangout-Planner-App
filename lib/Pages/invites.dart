@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Color theme from the drawer screenshot
+const Color drawerBackground = Color(0xFF0B082D);
+const Color neonCyan = Color(0xFF00F2FF);
+const Color mutedText = Color(0xFFCCCCCC);
+const Color gradientStart = Color(0xFF003F7D);
+const Color gradientEnd = Color(0xFF00C2FF);
+
 class InvitesPage extends StatelessWidget {
   const InvitesPage({super.key});
 
@@ -15,7 +22,12 @@ class InvitesPage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Invites")),
+      backgroundColor: drawerBackground,
+      appBar: AppBar(
+        title: const Text("Invites"),
+        backgroundColor: drawerBackground,
+        foregroundColor: neonCyan,
+      ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('invites')
@@ -27,7 +39,9 @@ class InvitesPage extends StatelessWidget {
           final invites = snapshot.data!.docs;
 
           if (invites.isEmpty) {
-            return const Center(child: Text('No invites.'));
+            return const Center(
+              child: Text('No invites.', style: TextStyle(color: mutedText)),
+            );
           }
 
           return ListView.builder(
@@ -35,42 +49,47 @@ class InvitesPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final invite = invites[index];
               final fromUid = invite['fromUid'];
-              final isPermission = invite['type'] == 'permission';
 
-             return FutureBuilder<String>(
-  future: getUsername(fromUid),
-  builder: (context, userSnap) {
-    if (!userSnap.hasData) return const ListTile(title: Text("Loading..."));
+              return FutureBuilder<String>(
+                future: getUsername(fromUid),
+                builder: (context, userSnap) {
+                  if (!userSnap.hasData) {
+                    return const ListTile(title: Text("Loading...", style: TextStyle(color: mutedText)));
+                  }
 
-    final senderUsername = userSnap.data!;
-    final isPermission = invite['type'] == 'permission';
+                  final senderUsername = userSnap.data!;
+                  final isPermission = invite['type'] == 'permission';
+                  final title = isPermission ? "🔐 Permission Request" : "📅 Plan Invite";
+                  final subtitle = isPermission
+                      ? "Grant invite permission to ${invite.data().containsKey('secondaryName') ? invite['secondaryName'] : 'someone'}?"
+                      : (invite['plan'] ?? 'No plan');
 
-    final title = isPermission ? "Permission Request" : "Plan Invite";
-    final subtitle = isPermission
-        ? "Grant permission to send invite to ${invite.data().containsKey('secondaryName') ? invite['secondaryName'] : '2nd-degree user'}?"
-        : (invite['plan'] ?? 'No plan');
-
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(subtitle),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => InviteDetailsPage(
-              senderUsername: senderUsername,
-              plan: invite['plan'] ?? 'No plan',
-              description: invite['description'] ?? 'No description',
-              inviteId: invite.id,
-              inviteData: invite.data(), // ✅ optional, if you're using it later
-            ),
-          ),
-        );
-      },
-    );
-  },
-);
-
+                  return Card(
+                    color: Colors.black,
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      title: Text(title, style: const TextStyle(color: neonCyan, fontWeight: FontWeight.bold)),
+                      subtitle: Text(subtitle, style: const TextStyle(color: mutedText)),
+                      trailing: const Icon(Icons.chevron_right, color: neonCyan),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InviteDetailsPage(
+                              senderUsername: senderUsername,
+                              plan: invite['plan'] ?? 'No plan',
+                              description: invite['description'] ?? 'No description',
+                              inviteId: invite.id,
+                              inviteData: invite.data(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
             },
           );
         },
@@ -107,12 +126,10 @@ class InviteDetailsPage extends StatelessWidget {
       final secondaryUid = inviteData['secondaryUid'];
       final secondaryName = inviteData['secondaryName'];
 
-      // ✅ Grant permission
       await FirebaseFirestore.instance.collection('users').doc(fromUid).update({
         'pseudoPrimaries': FieldValue.arrayUnion([secondaryUid])
       });
 
-      // ✅ Send actual invite
       await FirebaseFirestore.instance.collection('invites').add({
         'fromUid': fromUid,
         'toUid': secondaryUid,
@@ -122,7 +139,6 @@ class InviteDetailsPage extends StatelessWidget {
         'type': 'normal',
       });
 
-      // 🧹 Delete permission invite
       await FirebaseFirestore.instance.collection('invites').doc(inviteId).delete();
 
       if (context.mounted) {
@@ -134,7 +150,6 @@ class InviteDetailsPage extends StatelessWidget {
       return;
     }
 
-    // ✅ Normal plan invite acceptance
     final query = await FirebaseFirestore.instance
         .collection('plans')
         .where('fromUid', isEqualTo: fromUid)
@@ -151,7 +166,6 @@ class InviteDetailsPage extends StatelessWidget {
       });
     }
 
-    // 🧹 Delete the invite
     await FirebaseFirestore.instance.collection('invites').doc(inviteId).delete();
 
     if (context.mounted) {
@@ -169,29 +183,34 @@ class InviteDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPermission = inviteData['type'] == 'permission';
-    final secondName = inviteData['secondaryName'] ;
+    final secondName = inviteData['secondaryName'];
 
     return Scaffold(
-      appBar: AppBar(title: Text(isPermission ? "Permission Request" : "Plan Invite")),
+      backgroundColor: drawerBackground,
+      appBar: AppBar(
+        title: Text(isPermission ? "Permission Request" : "Plan Invite"),
+        backgroundColor: drawerBackground,
+        foregroundColor: neonCyan,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("From: $senderUsername", style: const TextStyle(fontSize: 16)),
+            Text("From: $senderUsername", style: const TextStyle(color: neonCyan, fontSize: 16)),
             const SizedBox(height: 16),
-            Text("Plan:", style: Theme.of(context).textTheme.titleLarge),
+            Text("Plan:", style: const TextStyle(color: neonCyan, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(plan, style: Theme.of(context).textTheme.bodyLarge),
+            Text(plan, style: const TextStyle(color: mutedText)),
             const SizedBox(height: 20),
-            Text("Description:", style: Theme.of(context).textTheme.titleLarge),
+            Text("Description:", style: const TextStyle(color: neonCyan, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(description),
+            Text(description, style: const TextStyle(color: mutedText)),
             if (isPermission) ...[
               const SizedBox(height: 30),
               Text(
                 "Grant permission to send invite to $secondName?",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: const TextStyle(color: neonCyan, fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
             const Spacer(),
@@ -200,10 +219,19 @@ class InviteDetailsPage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () => acceptInvite(context),
-                child: Text(isPermission ? "Grant" : "Accept"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: neonCyan,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: Text(isPermission ? "Grant" : "Accept"),
                 ),
                 OutlinedButton(
                   onPressed: () => rejectInvite(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: neonCyan),
+                    foregroundColor: neonCyan,
+                  ),
                   child: Text(isPermission ? "Deny" : "Reject"),
                 ),
               ],
