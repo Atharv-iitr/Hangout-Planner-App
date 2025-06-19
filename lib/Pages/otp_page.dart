@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hangout_planner/Pages/auth.dart';
+import 'package:hangout_planner/Pages/profile_setup_page.dart';
 
 class OTPPage extends StatefulWidget {
   final String phoneNumber;
@@ -73,24 +74,27 @@ class _OtpPageState extends State<OTPPage> {
     try {
       const testNumbers = ['+919845302237', '+917738296484','+917496047741','+918851178719'];
 
-      // Add the country code to the phone number for comparison
       String fullPhoneNumber = widget.phoneNumber.startsWith('+') ? widget.phoneNumber : '+91${widget.phoneNumber}';
 
       if (kDebugMode && testNumbers.contains(fullPhoneNumber)) {
         debugPrint('Test: OTP accepted without Firebase verification');
         if (widget.isRegistration) {
-          await _authService.registerWithUsername(
-            widget.username!,
-            widget.password!,
-            widget.name!,
-            widget.phoneNumber,
-          );
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
+          // Navigate to profile setup page
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfileSetupPage(
+                username: widget.username!,
+                password: widget.password!,
+                name: widget.name!,
+                phoneNumber: widget.phoneNumber,
+              ),
+            ),
           );
+        } else {
+          _navigateToHome();
         }
-        _navigateToHome();
         return;
       }
 
@@ -101,18 +105,21 @@ class _OtpPageState extends State<OTPPage> {
       if (user != null) {
         debugPrint('Firebase sign-in successful');
         if (widget.isRegistration) {
-          await _authService.registerWithUsername(
-            widget.username!,
-            widget.password!,
-            widget.name!,
-            widget.phoneNumber,
+          // Navigate to profile setup page 
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfileSetupPage(
+                username: widget.username!,
+                password: widget.password!,
+                name: widget.name!,
+                phoneNumber: widget.phoneNumber,
+              ),
+            ),
           );
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
-          );
+        } else {
+          _navigateToHome();
         }
-        _navigateToHome();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('OTP verification failed')),

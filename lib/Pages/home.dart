@@ -45,7 +45,7 @@ class HomePage extends StatelessWidget {
         elevation: 10,
       ),
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0F0F2D), // Dark cyberpunk background
+        backgroundColor: const Color(0xFF0F0F2D),
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -57,10 +57,14 @@ class HomePage extends StatelessWidget {
               builder: (context, snapshot) {
                 String userName = 'User';
                 String userUsername = '';
+                String? userPhotoURL;
+                String? userBiodata;
 
                 if (snapshot.hasData && snapshot.data!.exists) {
                   userName = snapshot.data!['name'] ?? 'User';
                   userUsername = snapshot.data!['username'] ?? '';
+                  userPhotoURL = snapshot.data!['photoURL'] as String?;
+                  userBiodata = snapshot.data!['biodata'] as String?;
                 }
 
                 return UserAccountsDrawerHeader(
@@ -72,14 +76,29 @@ class HomePage extends StatelessWidget {
                       fontSize: 18,
                     ),
                   ),
-                  accountEmail: Text(
-                    userUsername.isNotEmpty ? '@$userUsername' : '',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                    ),
+                  accountEmail: Column( // Use a Column to display username and biodata
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userUsername.isNotEmpty ? '@$userUsername' : '',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                      ),
+                      if (userBiodata != null && userBiodata.isNotEmpty)
+                        Text(
+                          userBiodata,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
-                  currentAccountPicture: user?.photoURL != null
-                      ? CircleAvatar(backgroundImage: NetworkImage(user!.photoURL!))
+                  currentAccountPicture: userPhotoURL != null
+                      ? CircleAvatar(backgroundImage: NetworkImage(userPhotoURL))
                       : const CircleAvatar(
                           backgroundColor: Colors.black54,
                           child: Icon(Icons.person, color: Colors.cyanAccent),

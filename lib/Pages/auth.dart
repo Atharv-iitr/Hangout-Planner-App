@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   String? _verificationId;
 
   // Check if username already exists
@@ -60,12 +63,14 @@ class AuthService {
     }
   }
 
-  // Register with username and phone number
+  // Register
   Future<User?> registerWithUsername(
     String username,
     String password,
     String name,
     String phoneNumber,
+    String? photoURL,
+    String? biodata,
   ) async {
     try {
       if (await _usernameExists(username)) {
@@ -89,6 +94,8 @@ class AuthService {
         'email': uniqueEmail,
         'name': name,
         'phoneNumber': phoneNumber,
+        'photoURL': photoURL,
+        'biodata': biodata,
         'createdAt': FieldValue.serverTimestamp(),
         'isApproved': true,
         'lastLogin': FieldValue.serverTimestamp(),
@@ -182,6 +189,29 @@ class AuthService {
       return doc.data();
     } catch (e) {
       debugPrint('Fetch user data error: $e');
+      return null;
+    }
+  }
+
+  // Update user data in Firestore
+  Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('users').doc(uid).update(data);
+    } catch (e) {
+      debugPrint('Error updating user data: $e');
+      rethrow;
+    }
+  }
+
+  // Upload profile picture to Firebase Storage
+  Future<String?> uploadProfilePicture(File imageFile, String uid) async {
+    try {
+      final ref = _storage.ref().child('profile_pictures').child('$uid.jpg');
+      await ref.putFile(imageFile);
+      final photoURL = await ref.getDownloadURL();
+      return photoURL;
+    } catch (e) {
+      debugPrint('Error uploading profile picture: $e');
       return null;
     }
   }
