@@ -9,7 +9,7 @@ import 'package:hangout_planner/Pages/login_page.dart';
 import 'package:hangout_planner/Pages/make_plan.dart';
 import 'package:hangout_planner/Pages/notification.dart';
 import 'package:hangout_planner/Pages/search.dart';
-
+import 'package:hangout_planner/Pages/planspage.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
         },
       ),
       routes: {
+        '/planspage': (context) => const PlansPage(),
         '/home': (context) => const HomePage(),
         '/invitespage': (context) => const InvitesPage(),
         '/friendspage': (context) => const FriendsPage(),
@@ -42,7 +43,7 @@ class MyApp extends StatelessWidget {
         '/makeplan': (context) => MakePlan(),
         '/login': (context) => const LoginPage(),
         '/search': (context) => const SearchPage(),
-        '/firstdeg': (context) => const FirstDeg(),
+        '/firstdeg': (context) => const FirstDeg(planTitle: '', planDesc: ''),
       },
     );
   }

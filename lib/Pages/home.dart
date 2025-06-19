@@ -126,7 +126,18 @@ class HomePage extends StatelessWidget {
         children: <Widget>[
           Positioned(
             bottom: 16,
-            left: 70,
+            right: 165,
+            child: FloatingActionButton.extended(
+              backgroundColor: const Color.fromARGB(255, 1, 192, 255),
+              heroTag: "fab2",
+              onPressed: () => Navigator.pushNamed(context, '/planspage'),
+              icon: const Icon(Icons.event_note, color: Colors.white),
+              label: const Text("Plans"),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            left: 20,
             child: FloatingActionButton(
               backgroundColor: const Color(0xFF00F5FF),
               heroTag: "fab1",
@@ -136,10 +147,10 @@ class HomePage extends StatelessWidget {
           ),
           Positioned(
             bottom: 16,
-            right: 50,
+            right: 20,
             child: FloatingActionButton.extended(
               backgroundColor: const Color(0xFFFF0266),
-              heroTag: "fab2",
+              heroTag: "fab3",
               onPressed: () => Navigator.pushNamed(context, '/makeplan'),
               icon: const Icon(Icons.edit, color: Colors.white),
               label: const Text("Make Plan"),
@@ -306,6 +317,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(
+                        
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00F5FF),
                           foregroundColor: Colors.black,
@@ -320,6 +332,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
                               }
                             : null,
                         child: const Text('Next Friends'),
+                        
                       ),
                     ],
                   ),
@@ -372,7 +385,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
           final dy = center.dy + orbitRadius * sin(angle);
           friendPositions.add(Offset(dx, dy));
         }
-
+          
         return Stack(
           children: [
             CustomPaint(
