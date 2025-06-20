@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'friend_profile_page.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -208,6 +209,14 @@ class _FriendsPageState extends State<FriendsPage> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FriendProfilePage(uid: friend['uid']!),
+                                    ),
+                                  );
+                                },
                                 trailing: IconButton(
                                   icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
                                   tooltip: "Remove friend",
