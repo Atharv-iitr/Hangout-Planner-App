@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hangout_planner/Pages/profile_setup_page.dart'; // Import the new page
+import 'package:hangout_planner/Pages/profile_setup_page.dart';
 import 'package:hangout_planner/Pages/home.dart';
 
 class OtpVerificationPage extends StatefulWidget {
@@ -9,6 +9,7 @@ class OtpVerificationPage extends StatefulWidget {
   final String? email;
   final String? password;
   final String? uid;
+  final String generatedOtp; // <-- Add this
 
   const OtpVerificationPage({
     super.key,
@@ -16,6 +17,7 @@ class OtpVerificationPage extends StatefulWidget {
     this.email,
     this.password,
     this.uid,
+    required this.generatedOtp, // <-- Add this
   });
 
   @override
@@ -34,11 +36,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       _isLoading = true;
     });
 
-    if (_otpController.text.length == 6 && int.tryParse(_otpController.text) != null) {
-      if (!mounted) return;
-
+    // Check OTP
+    if (_otpController.text.trim() == widget.generatedOtp) {
       try {
-        // If coming from login, perform final Firebase authentication
         if (widget.email != null && widget.password != null) {
           final authService = AuthService();
           User? user = await authService.signInWithEmailAndPassword(
@@ -57,7 +57,6 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             );
           }
         } else if (widget.uid != null) {
-          // If coming from registration, navigate to Profile Setup Page
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -65,7 +64,6 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             ),
           );
         } else {
-      
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registration complete, but UID missing for profile setup.')),
           );
@@ -85,7 +83,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 6-digit OTP.')),
+        const SnackBar(content: Text('Incorrect OTP.')),
       );
     }
 
