@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,6 +21,12 @@ class RegisterFormState extends State<RegisterForm> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Generate a random 6-digit OTP
+  String _generateOtp() {
+    final random = Random();
+    return (100000 + random.nextInt(900000)).toString();
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -40,6 +47,11 @@ class RegisterFormState extends State<RegisterForm> {
       if (!mounted) return;
 
       if (user != null) {
+        // Generate and print OTP
+        final generatedOtp = _generateOtp();
+        debugPrint('OTP for registration: $generatedOtp');
+        print('OTP for registration: $generatedOtp');
+
         // Navigate to OTP verification page after successful registration
         Navigator.pushReplacement(
           context,
@@ -47,6 +59,7 @@ class RegisterFormState extends State<RegisterForm> {
             builder: (context) => OtpVerificationPage(
               phoneNumber: _phoneController.text.trim(),
               uid: user.uid,
+              generatedOtp: generatedOtp, // Pass the OTP here
             ),
           ),
         );
