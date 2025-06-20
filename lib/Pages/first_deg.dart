@@ -158,7 +158,7 @@ Future<void> _sendDirectInvite(String targetUid) async {
 
   @override
   Widget build(BuildContext context) {
-    final totalPages = (friends.length / friendsPerPage).ceil();
+    final totalPages = max((friends.length / friendsPerPage).ceil(),1);
     final startIndex = currentPage * friendsPerPage;
     final endIndex = min(startIndex + friendsPerPage, friends.length);
     final visibleFriends = friends.sublist(startIndex, endIndex);

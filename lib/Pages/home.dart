@@ -332,7 +332,7 @@ class _FriendGraphWidgetState extends State<FriendGraphWidget>
             allFriends = friendSnapshot.data!;
             _controller.forward(from: 0);
 
-            final totalPages = (allFriends.length / friendsPerPage).ceil();
+            final totalPages = max((allFriends.length / friendsPerPage).ceil(),1);
             final startIndex = currentPage * friendsPerPage;
             final endIndex = min(startIndex + friendsPerPage, allFriends.length);
             final currentFriends = allFriends.sublist(startIndex, endIndex);
