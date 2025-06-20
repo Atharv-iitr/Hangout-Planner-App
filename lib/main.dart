@@ -10,7 +10,6 @@ import 'package:hangout_planner/Pages/make_plan.dart';
 import 'package:hangout_planner/Pages/notification.dart';
 import 'package:hangout_planner/Pages/search.dart';
 import 'package:hangout_planner/Pages/planspage.dart';
-import 'package:hangout_planner/Pages/otp_verification_page.dart';
 import 'package:hangout_planner/Pages/profile_settings_page.dart';
 
 void main() async {

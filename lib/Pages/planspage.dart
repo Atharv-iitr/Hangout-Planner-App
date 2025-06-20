@@ -109,10 +109,13 @@ class _PlansPageState extends State<PlansPage> {
         return tsB.compareTo(tsA);
       });
 
-      setState(() {
-        _plans = all;
+      
+      if (mounted) {
+        setState(() {
+          _plans = all;
         _loading = false;
-      });
+        });
+      }
     } catch (e) {
       debugPrint("Error fetching plans: $e");
       setState(() => _loading = false);

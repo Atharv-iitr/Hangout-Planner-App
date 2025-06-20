@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:hangout_planner/Pages/auth.dart';
-import 'package:hangout_planner/Pages/profile_settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
