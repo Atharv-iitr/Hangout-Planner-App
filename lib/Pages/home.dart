@@ -24,7 +24,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchUserData() async {
     _userData = await _authService.getCurrentUserData();
-    setState(() {});
+    
+   if (mounted) {
+        setState(() {
+          
+        });
+      }
   }
 
   @override

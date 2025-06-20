@@ -34,7 +34,7 @@ class _SearchPageState extends State<SearchPage> {
         .where('username', isLessThanOrEqualTo: '$query\uf8ff')
         .get();
 
-    if (!mounted) return; 
+    if (!mounted) return;
     setState(() {
       _results = querySnap.docs.where((doc) => doc.id != meId).toList();
     });
@@ -56,7 +56,6 @@ class _SearchPageState extends State<SearchPage> {
 
   void _sendRequest(DocumentSnapshot target) async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,8 +68,7 @@ class _SearchPageState extends State<SearchPage> {
     final targetId = target.id;
 
     final meRef = FirebaseFirestore.instance.collection('users').doc(meId);
-    final targetRef =
-        FirebaseFirestore.instance.collection('users').doc(targetId);
+    final targetRef = FirebaseFirestore.instance.collection('users').doc(targetId);
 
     try {
       await Future.wait([
@@ -86,9 +84,8 @@ class _SearchPageState extends State<SearchPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Friend request sent')),
       );
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('ERROR sending request: $e');
-      debugPrint('Stacktrace: $stack');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
@@ -98,13 +95,25 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    const Color bgColor = Color(0xFF0A0F24);
+    const Color accentColor = Color(0xFF00FFC5);
+    const Color neonPink = Color(0xFFFF00C8);
+    const Color textColor = Color(0xFFE4E4E4);
+
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        centerTitle: true,
         title: const Text(
           'Search People',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+            color: accentColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            letterSpacing: 1.2,
+          ),
         ),
-        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -112,21 +121,35 @@ class _SearchPageState extends State<SearchPage> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              cursorColor: accentColor,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF1C1B33),
                 hintText: 'Search usernames...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: neonPink),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, color: neonPink),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _results = []);
                         },
                       )
                     : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: accentColor, width: 1.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: neonPink, width: 1.2),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: accentColor, width: 2),
+                ),
               ),
             ),
           ),
@@ -139,14 +162,28 @@ class _SearchPageState extends State<SearchPage> {
                   future: _isFriendOrRequested(doc),
                   builder: (context, snap) {
                     final busy = snap.data ?? false;
-                    return ListTile(
-                      title: Text(doc['username']),
-                      trailing: busy
-                          ? const Text('Already requested or friends')
-                          : ElevatedButton(
-                              onPressed: () => _sendRequest(doc),
-                              child: const Text('Add Friend'),
-                            ),
+                    return Card(
+                      color: const Color(0xFF121426),
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        title: Text(
+                          doc['username'],
+                          style: const TextStyle(color: textColor, fontWeight: FontWeight.w600),
+                        ),
+                        trailing: busy
+                            ? const Text(
+                                'Requested / Friend',
+                                style: TextStyle(color: Colors.grey),
+                              )
+                            : ElevatedButton(
+                                onPressed: () => _sendRequest(doc),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: neonPink,
+                                  foregroundColor: Colors.black,
+                                ),
+                                child: const Text('Add'),
+                              ),
+                      ),
                     );
                   },
                 );
