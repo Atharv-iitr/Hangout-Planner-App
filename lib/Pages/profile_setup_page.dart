@@ -117,9 +117,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter some biodata';
                     }
-                    if (value.length < 20) {
-                      return 'Biodata must be at least 20 characters';
-                    }
                     return null;
                   },
                 ),
