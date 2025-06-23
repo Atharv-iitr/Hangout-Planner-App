@@ -8,19 +8,35 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F0F1A), // Dark background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Hangout Planner',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Colors.cyanAccent, Colors.purpleAccent],
+              ).createShader(bounds),
+              child: const Text(
+                'Hango',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // Required for shader
+                  shadows: [
+                    Shadow(
+                      blurRadius: 10,
+                      color: Colors.cyanAccent,
+                      offset: Offset(0, 0),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 40),
-            ElevatedButton(
+            const SizedBox(height: 50),
+            _neonButton(
+              context: context,
+              text: 'Sign In',
               onPressed: () {
                 Navigator.push(
                   context,
@@ -29,13 +45,11 @@ class LoginPage extends StatelessWidget {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 50),
-              ),
-              child: const Text('Sign In'),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            _neonButton(
+              context: context,
+              text: 'Sign Up',
               onPressed: () {
                 Navigator.push(
                   context,
@@ -44,12 +58,39 @@ class LoginPage extends StatelessWidget {
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 50),
-              ),
-              child: const Text('Sign Up'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _neonButton({
+    required BuildContext context,
+    required String text,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: 200,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.cyanAccent,
+          foregroundColor: Colors.black,
+          elevation: 12,
+          shadowColor: Colors.purpleAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
       ),
     );

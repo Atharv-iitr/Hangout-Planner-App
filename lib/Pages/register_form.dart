@@ -21,7 +21,6 @@ class RegisterFormState extends State<RegisterForm> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Generate a random 6-digit OTP
   String _generateOtp() {
     final random = Random();
     return (100000 + random.nextInt(900000)).toString();
@@ -47,39 +46,30 @@ class RegisterFormState extends State<RegisterForm> {
       if (!mounted) return;
 
       if (user != null) {
-        // Generate and print OTP
         final generatedOtp = _generateOtp();
-        debugPrint('OTP for registration: $generatedOtp');
-        print('OTP for registration: $generatedOtp');
+        debugPrint('OTP: $generatedOtp');
 
-        // Navigate to OTP verification page after successful registration
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerificationPage(
               phoneNumber: _phoneController.text.trim(),
               uid: user.uid,
-              generatedOtp: generatedOtp, // Pass the OTP here
+              generatedOtp: generatedOtp,
             ),
           ),
         );
       } else {
-        setState(() {
-          _errorMessage = 'Registration failed. Please try again.';
-        });
+        setState(
+          () => _errorMessage = 'Registration failed. Please try again.',
+        );
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message ?? 'Registration failed';
-      });
+      setState(() => _errorMessage = e.message ?? 'Registration failed');
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
+      setState(() => _errorMessage = 'An unexpected error occurred.');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -93,12 +83,44 @@ class RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
+  InputDecoration _cyberInputDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: const TextStyle(color: Colors.cyanAccent),
+      hintStyle: const TextStyle(color: Colors.white70),
+      border: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.cyanAccent),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.purpleAccent),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      filled: true,
+      fillColor: Colors.white12,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      backgroundColor: const Color(0xFF0F0F1A),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Register',
+          style: TextStyle(color: Colors.cyanAccent),
+        ),
+        centerTitle: true,
+        elevation: 10,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -106,26 +128,28 @@ class RegisterFormState extends State<RegisterForm> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      (value == null || value.isEmpty) ? 'Please enter your name' : null,
+                  decoration: _cyberInputDecoration('Full Name'),
+                  style: const TextStyle(color: Colors.white),
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Please enter your name'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Username',
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g., cooluser123',
+                  decoration: _cyberInputDecoration(
+                    'Username',
+                    hint: 'e.g., cooluser123',
                   ),
+                  style: const TextStyle(color: Colors.white),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please choose a username';
+                    if (value == null || value.isEmpty)
+                      return 'Please choose a username';
                     if (value.contains(' ')) return 'No spaces allowed';
                     if (value.length < 4) return 'At least 4 characters';
-                    if (!RegExp(r'^[a-z0-9_]+$').hasMatch(value.toLowerCase())) {
+                    if (!RegExp(
+                      r'^[a-z0-9_]+$',
+                    ).hasMatch(value.toLowerCase())) {
                       return 'Only letters, numbers and _ allowed';
                     }
                     return null;
@@ -135,17 +159,17 @@ class RegisterFormState extends State<RegisterForm> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
-                    hintText: 'e.g., +919876543210',
+                  decoration: _cyberInputDecoration(
+                    'Phone Number',
+                    hint: '+919876543210',
                   ),
+                  style: const TextStyle(color: Colors.white),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your phone number';
                     }
                     if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value)) {
-                      return 'Enter a valid phone number (e.g., +1234567890)';
+                      return 'Enter a valid phone number';
                     }
                     return null;
                   },
@@ -153,13 +177,13 @@ class RegisterFormState extends State<RegisterForm> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
                   obscureText: true,
+                  decoration: _cyberInputDecoration('Password'),
+                  style: const TextStyle(color: Colors.white),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter password';
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter password';
+                    }
                     if (value.length < 6) return 'At least 6 characters';
                     return null;
                   },
@@ -167,20 +191,19 @@ class RegisterFormState extends State<RegisterForm> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _confirmPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder(),
-                  ),
                   obscureText: true,
-                  validator: (value) =>
-                      value != _passwordController.text ? 'Passwords don\'t match' : null,
+                  decoration: _cyberInputDecoration('Confirm Password'),
+                  style: const TextStyle(color: Colors.white),
+                  validator: (value) => value != _passwordController.text
+                      ? 'Passwords don\'t match'
+                      : null,
                 ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 16),
                   Text(
                     _errorMessage!,
                     style: const TextStyle(
-                      color: Colors.red,
+                      color: Colors.redAccent,
                       fontSize: 16,
                     ),
                   ),
@@ -190,13 +213,28 @@ class RegisterFormState extends State<RegisterForm> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.cyanAccent,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      shadowColor: Colors.purpleAccent,
+                      elevation: 10,
+                    ),
                     onPressed: _isLoading ? null : _submit,
                     child: _isLoading
                         ? const CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Colors.black,
                           )
-                        : const Text('Register'),
+                        : const Text(
+                            'REGISTER',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ],

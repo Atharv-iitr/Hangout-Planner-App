@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:hangout_planner/Pages/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hangout_planner/Pages/auth.dart';
 
 class AuthForm extends StatefulWidget {
   final bool isLogin;
@@ -24,7 +24,6 @@ class AuthFormState extends State<AuthForm> {
   bool _otpSent = false;
   Map<String, dynamic>? _pendingUserData;
 
-  // Generate a random 6-digit OTP
   String _generateOtp() {
     final random = Random();
     return (100000 + random.nextInt(900000)).toString();
@@ -39,40 +38,35 @@ class AuthFormState extends State<AuthForm> {
       final authService = AuthService();
 
       if (widget.isLogin) {
-        // LOGIN FLOW
         final userData = await authService.signInWithUsername(
           _usernameController.text.trim(),
           _passwordController.text.trim(),
         );
+
         if (!mounted) return;
 
         if (userData != null) {
-          // Generate and print OTP
           _generatedOtp = _generateOtp();
           debugPrint('OTP for login: $_generatedOtp');
-          // print('OTP for login: $_generatedOtp');
+
           setState(() {
             _otpSent = true;
             _pendingUserData = userData;
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Wrong username or password'),
-            ),
+            const SnackBar(content: Text('Wrong username or password')),
           );
         }
       } else {
-        // REGISTER FLOW
         final username = _usernameController.text.trim();
         final password = _passwordController.text.trim();
         final name = _nameController.text.trim();
         final phone = _phoneController.text.trim();
 
-        // Generate and print OTP
         _generatedOtp = _generateOtp();
         debugPrint('OTP for registration: $_generatedOtp');
-        // print('OTP for registration: $_generatedOtp');
+
         setState(() {
           _otpSent = true;
           _pendingUserData = {
@@ -99,38 +93,33 @@ class AuthFormState extends State<AuthForm> {
 
   Future<void> _verifyOtpAndProceed() async {
     if (_otpController.text.trim() == _generatedOtp) {
-      if (widget.isLogin) {
-        // Login: sign in with email and password
-        final authService = AuthService();
-        try {
+      final authService = AuthService();
+
+      try {
+        if (widget.isLogin) {
           await authService.signInWithEmailAndPassword(
             _pendingUserData!['email'],
             _pendingUserData!['password'],
           );
-          if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed('/home');
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login failed after OTP.')),
-          );
-        }
-      } else {
-        // Register: create user
-        final authService = AuthService();
-        try {
+        } else {
           await authService.registerWithUsername(
             _pendingUserData!['username'],
             _pendingUserData!['password'],
             _pendingUserData!['name'],
             _pendingUserData!['phoneNumber'],
           );
-          if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed('/home');
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration failed after OTP.')),
-          );
         }
+
+        if (!mounted) return;
+        Navigator.of(context).pushReplacementNamed('/home');
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.isLogin ? 'Login failed after OTP.' : 'Registration failed after OTP.',
+            ),
+          ),
+        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -151,8 +140,22 @@ class AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
+    final neonColor = Colors.cyanAccent;
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isLogin ? 'Sign In' : 'Sign Up')),
+      backgroundColor: const Color(0xFF0F0F1A),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text(
+          widget.isLogin ? 'SIGN IN' : 'SIGN UP',
+          style: const TextStyle(
+            color: Colors.cyanAccent,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -162,125 +165,152 @@ class AuthFormState extends State<AuthForm> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Enter the 6-digit OTP (check terminal/output)',
-                      style: TextStyle(fontSize: 16),
+                      '🔐 Enter the 6-digit OTP (check terminal)',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    _buildNeonInputField(
                       controller: _otpController,
-                      decoration: const InputDecoration(
-                        labelText: 'OTP',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'OTP',
                       keyboardType: TextInputType.number,
                       maxLength: 6,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter the OTP';
-                        }
-                        if (value.length != 6) {
-                          return 'OTP must be 6 digits';
-                        }
-                        return null;
-                      },
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
+                    const SizedBox(height: 20),
+                    _buildNeonButton(
+                      text: 'Verify OTP',
                       onPressed: _isLoading ? null : _verifyOtpAndProceed,
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : const Text('Verify OTP'),
+                      loading: _isLoading,
                     ),
                   ],
                 )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (!widget.isLogin) ...[
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!widget.isLogin) ...[
+                        _buildNeonInputField(
+                          controller: _nameController,
+                          label: 'Name',
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
+                        const SizedBox(height: 16),
+                        _buildNeonInputField(
+                          controller: _phoneController,
+                          label: 'Phone Number',
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _buildNeonInputField(
+                        controller: _usernameController,
+                        label: 'Username',
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your phone number';
-                          }
-                          if (value.length < 10) {
-                            return 'Enter a valid phone number';
-                          }
-                          return null;
-                        },
+                      _buildNeonInputField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        obscureText: true,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      _buildNeonButton(
+                        text: widget.isLogin ? 'Sign In' : 'Sign Up',
+                        onPressed: _isLoading ? null : _submit,
+                        loading: _isLoading,
+                      ),
                     ],
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your username';
-                        }
-                        if (value.contains(' ')) {
-                          return 'Username cannot contain spaces';
-                        }
-                        if (value.length < 4) {
-                          return 'Username must be at least 4 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : Text(widget.isLogin ? 'Sign In' : 'Sign Up'),
-                    ),
-                  ],
+                  ),
                 ),
         ),
       ),
     );
   }
+
+  Widget _buildNeonInputField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      maxLength: maxLength,
+      style: const TextStyle(color: Colors.cyanAccent),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.cyanAccent),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.cyanAccent),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.purpleAccent),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        border: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.white),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return '⚠️ $label is required';
+        }
+        if (label == 'Username' && value.contains(' ')) {
+          return '⚠️ No spaces allowed in username';
+        }
+        if (label == 'Username' && value.length < 4) {
+          return '⚠️ Must be at least 4 characters';
+        }
+        if (label == 'Phone Number' && value.length < 10) {
+          return '⚠️ Enter a valid phone number';
+        }
+        if (label == 'Password' && value.length < 6) {
+          return '⚠️ Must be at least 6 characters';
+        }
+        if (label == 'OTP' && value.length != 6) {
+          return '⚠️ OTP must be 6 digits';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNeonButton({
+    required String text,
+    required VoidCallback? onPressed,
+    required bool loading,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.cyanAccent,
+          foregroundColor: Colors.black,
+          elevation: 10,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: loading
+            ? const CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.black,
+              )
+            : Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+      ),
+    );
+  }
 }
+
+
