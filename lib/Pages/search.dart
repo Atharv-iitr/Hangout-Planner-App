@@ -103,7 +103,15 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        flexibleSpace: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color.fromARGB(255, 75, 71, 106), Color.fromARGB(255, 46, 40, 124), Color.fromARGB(255, 21, 21, 120)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+    ),
         centerTitle: true,
         title: const Text(
           'Search People',
