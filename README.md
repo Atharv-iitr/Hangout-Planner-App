@@ -38,5 +38,6 @@
      Smooth navigations between pages and graphs.
  # Additional features
   The most difficult job was to fit all friends in graph as we cant do it in one window we thought about an idea of pagination of graph. In pagination we divided all      friends into group of 8 friends and viewed a group per window and to shift between groups we implemented Next/Previous Friends buttons. In this way we were able to      show any number of friends of an user.
+  We have also created the apk of the app so that the app could be also run on your phone. For apk please go to the releases section.
   
        
