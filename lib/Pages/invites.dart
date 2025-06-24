@@ -59,7 +59,7 @@ class InvitesPage extends StatelessWidget {
 
                   final senderUsername = userSnap.data!;
                   final isPermission = invite['type'] == 'permission';
-                  final title = isPermission ? " Permission Request" : " Plan Invite";
+                  final title = isPermission ? " 🔐 Permission Request" : "📅 Plan Invite";
                   final subtitle = isPermission
                       ? "Grant invite permission to ${invite.data().containsKey('secondaryName') ? invite['secondaryName'] : 'someone'}?"
                       : (invite['plan'] ?? 'No plan');
