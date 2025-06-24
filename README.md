@@ -39,5 +39,7 @@
  # Additional features
   The most difficult job was to fit all friends in graph as we cant do it in one window we thought about an idea of pagination of graph. In pagination we divided all      friends into group of 8 friends and viewed a group per window and to shift between groups we implemented Next/Previous Friends buttons. In this way we were able to      show any number of friends of an user.
   We have also created the apk of the app so that the app could be also run on your phone. For apk please go to the releases section.
+ # Note: 
+ When you sign up you will get otp in your terminal and if you click on the screen after that the many other lines will get added in the terminal making the otp not visible on the screen , so for that scroll up the     terminal and search for otp. 
   
        
