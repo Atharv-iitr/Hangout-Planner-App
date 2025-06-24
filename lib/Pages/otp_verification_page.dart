@@ -9,7 +9,7 @@ class OtpVerificationPage extends StatefulWidget {
   final String? email;
   final String? password;
   final String? uid;
-  final String generatedOtp; // <-- Add this
+  final String generatedOtp;
 
   const OtpVerificationPage({
     super.key,
@@ -17,7 +17,7 @@ class OtpVerificationPage extends StatefulWidget {
     this.email,
     this.password,
     this.uid,
-    required this.generatedOtp, // <-- Add this
+    required this.generatedOtp,
   });
 
   @override
