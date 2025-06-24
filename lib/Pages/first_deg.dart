@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:math'; // ✅ For min()
+import 'dart:math'; 
 
 class FirstDeg extends StatefulWidget {
   final String? userUid;
@@ -9,8 +9,8 @@ class FirstDeg extends StatefulWidget {
   final String? centerName;
   final List<String> excludedUids;
 
-  final String planTitle; // ✅ Required
-  final String planDesc;  // ✅ Required
+  final String planTitle; 
+  final String planDesc;  
 
   const FirstDeg({
     super.key,
@@ -18,8 +18,8 @@ class FirstDeg extends StatefulWidget {
     this.depth = 0,
     this.centerName,
     this.excludedUids = const [],
-    required this.planTitle,  // ✅ Now required
-    required this.planDesc,   // ✅ Now required
+    required this.planTitle,  
+    required this.planDesc,   
   });
 
   @override
@@ -82,19 +82,19 @@ class _FirstDegState extends State<FirstDeg> {
   final currentUser = FirebaseAuth.instance.currentUser;
   if (currentUser == null) return;
 
-  // 🔍 Fetch username of the 2nd-degree friend (target)
+  //  Fetch username of the 2nd-degree friend (target)
   final targetDoc = await FirebaseFirestore.instance.collection('users').doc(targetUid).get();
   final secondaryName = targetDoc.data()?['username'] ?? 'Unknown';
-   // 👤 Fetch primary friend's name
+   //  Fetch primary friend's name
   final primaryDoc = await FirebaseFirestore.instance.collection('users').doc(approverUid).get();
   final primaryName = primaryDoc.data()?['username'] ?? 'Unknown';
-  // 📩 Send permission request with secondaryName
+  //  Send permission request with secondaryName
   await FirebaseFirestore.instance.collection('invites').add({
     'type': 'permission',
     'fromUid': currentUser.uid,
     'toUid': approverUid,
     'secondaryUid': targetUid,
-    'secondaryName': secondaryName, // ✅ Added for display
+    'secondaryName': secondaryName, //  Added for display
     'plan': widget.planTitle,
     'description': widget.planDesc,
     'timestamp': FieldValue.serverTimestamp()
@@ -137,7 +137,7 @@ Future<void> _sendDirectInvite(String targetUid) async {
   final pseudoPrimaries = List<String>.from(userDoc.data()?['pseudoPrimaries'] ?? []);
 
   if (pseudoPrimaries.contains(targetUid)) {
-    // ✅ Already approved, send actual invite
+    //  Already approved, send actual invite
     await FirebaseFirestore.instance.collection('invites').add({
       'fromUid': currentUser.uid,
       'toUid': targetUid,
@@ -149,7 +149,7 @@ Future<void> _sendDirectInvite(String targetUid) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invite sent!")));
   } else {
-    // ❌ Not approved yet → send permission request to 1st-degree friend
+    //  Not approved yet → send permission request to 1st-degree friend
     await _sendPermissionRequest(viaFirstDegreeUid, targetUid);
   }
 }
@@ -204,7 +204,7 @@ Future<void> _sendDirectInvite(String targetUid) async {
   height: nodeRadius * 2,
   child: GestureDetector(
     onTap: () {
-      // 👇 Invite the primary friend directly
+      //  Invite the primary friend directly
       showDialog(
         context: context,
         builder: (_) {
@@ -261,7 +261,7 @@ Future<void> _sendDirectInvite(String targetUid) async {
   height: nodeRadius * 2,
   child: GestureDetector(
     onTap: () {
-      // 👇 Invite the primary friend directly
+      //  Invite the primary friend directly
       showDialog(
         context: context,
         builder: (_) {
